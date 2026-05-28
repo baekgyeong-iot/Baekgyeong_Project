@@ -14,6 +14,7 @@ PLAY_BUTTON_PIN = 23
 
 SLEEP_BUTTON_PIN = 24
 
+TEXT_BUTTON_PIN = 25
 
 # =========================
 # LED 
@@ -31,3 +32,19 @@ BLUE_LED_PIN = 13
 # =========================
 
 SPEAKER_PIN = 18
+
+# ========================= 
+# GAME CONFIG 
+# ========================= 
+WARNING_THRESHOLD = 10 
+
+YELLOW_THRESHOLD = 50 
+
+RED_THRESHOLD = 30 
+
+ACTION_COOLDOWN = { 
+  "FEED": 5, 
+  "PLAY": 5, 
+  "SPEAK": 3, 
+  "PET": 2
+}
