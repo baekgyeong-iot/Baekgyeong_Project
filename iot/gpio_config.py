@@ -8,23 +8,25 @@ LIGHT_SENSOR_PIN = 17
 
 TOUCH_SENSOR_PIN = 27
 
-FEED_BUTTON_PIN = 22
+LEFT_BUTTON_PIN = 23
 
-PLAY_BUTTON_PIN = 23
+RIGHT_BUTTON_PIN = 24
 
-SLEEP_BUTTON_PIN = 24
+TILT_SENSOR_PIN = 27
 
-TEXT_BUTTON_PIN = 25
+
+
+
 
 # =========================
 # LED 
 # =========================
 
-RED_LED_PIN = 5
+HUNGER_LED_PIN = 5
 
-GREEN_LED_PIN = 6
+ENERGY_LED_PIN = 6
 
-BLUE_LED_PIN = 13
+FUN_LED_PIN = 13
 
 
 # =========================
@@ -42,6 +44,8 @@ YELLOW_THRESHOLD = 50
 
 RED_THRESHOLD = 30 
 
+
+# 각 행동의 재사용 대기시간
 ACTION_COOLDOWN = { 
   "FEED": 5, 
   "PLAY": 5, 
