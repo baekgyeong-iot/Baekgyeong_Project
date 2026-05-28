@@ -3,14 +3,18 @@
 import random
 import time
 
-from mqtt_publisher import publish_event
+from mqtt_publisher import (
+    publish_event,
+    TOPICS
+)
 
 
-def read_light_sensor():
+def send_light_event():
 
     light_value = random.randint(0, 300)
 
-    is_dark = light_value < 150
+    is_dark = light_value < 120
+
 
     event_data = {
 
@@ -27,61 +31,118 @@ def read_light_sensor():
     }
 
     publish_event(
-        "baekgyeong/sensor/light",
+        TOPICS["LIGHT"],
         event_data
     )
 
 
-def read_feed_button():
+def send_tilt_event():
 
-    clicked = random.choice([True, False])
+    shake_power = random.randint(0, 10)
 
-    if clicked:
+    event_data = {
 
-        event_data = {
+        "source": "TILT_SENSOR",
 
-            "source": "LCD_BUTTON",
+        "event": "DEVICE_SHAKEN",
 
-            "event": "FEED_BUTTON_CLICKED",
+        "payload": {
 
-            "payload": {}
+            "shake_power": shake_power
         }
+    }
 
-        publish_event(
-            "baekgyeong/button/feed",
-            event_data
-        )
+    publish_event(
+        TOPICS["TILT"],
+        event_data
+    )
 
 
-def read_play_button():
+def send_feed_event():
 
-    clicked = random.choice([True, False])
+    food_list = [
 
-    if clicked:
+        ("APPLE", 10),
 
-        event_data = {
+        ("MEAT", 20),
 
-            "source": "TOUCH_SENSOR",
+        ("BREAD", 15),
 
-            "event": "PLAY_BUTTON_CLICKED",
+        ("FISH", 25)
+    ]
 
-            "payload": {}
+    food_name, recovery = random.choice(
+        food_list
+    )
+
+    event_data = {
+
+        "source": "TOUCH_SENSOR",
+
+        "event": "FOOD_CAUGHT",
+
+        "payload": {
+
+            "food_name": food_name,
+
+            "recovery": recovery
         }
+    }
 
-        publish_event(
-            "baekgyeong/button/play",
-            event_data
-        )
+    publish_event(
+        TOPICS["FEED"],
+        event_data
+    )
+
+
+def send_pet_event():
+
+    event_data = {
+
+        "source": "LCD_TOUCH",
+
+        "event": "PET_DETECTED",
+
+        "payload": {}
+    }
+
+    publish_event(
+        TOPICS["PET"],
+        event_data
+    )
+
+
+def send_text_button_event():
+
+    event_data = {
+
+        "source": "TEXT_BUTTON",
+
+        "event": "TEXT_BUTTON_CLICKED",
+
+        "payload": {}
+    }
+
+    publish_event(
+        TOPICS["TEXT"],
+        event_data
+    )
 
 
 if __name__ == "__main__":
 
-    while True:
+    for i in range(5):
 
-        read_light_sensor()
+        print(f"\n===== EVENT LOOP {i+1} =====")
 
-        read_feed_button()
+        send_light_event()
 
-        read_play_button()
+        send_tilt_event()
+
+        send_feed_event()
+
+        send_pet_event()
+
+        send_text_button_event()
 
         time.sleep(3)
