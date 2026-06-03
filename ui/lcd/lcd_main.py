@@ -1,487 +1,207 @@
-#lcd_main.py
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 import pygame
-import math
 
-TOP_BAR_HEIGHT = 56
-BOTTOM_BAR_HEIGHT = 50
+CURRENT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = CURRENT_DIR.parents[1]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from asset_loader import load_fonts, load_food_sprites, load_icons, load_sprites
+from game_logic import event_handler, state as local_state
+from scenes.scene_manager import SceneManager
+
 
 SCREEN_WIDTH = 480
 SCREEN_HEIGHT = 320
-
-CHARACTER_SIZE = 110
-
-CHARACTER_X = (
-    SCREEN_WIDTH // 2
-    + 50
-    - CHARACTER_SIZE // 2
-)
-
-CHARACTER_Y = 105
-
-COLOR_TOP_BAR = (43, 67, 110)
-COLOR_BOTTOM_BAR = (29, 45, 76)
-
-COLOR_MAIN_BG = (73, 116, 181)
-COLOR_LCD_INNER_BORDER = (100, 140, 200)
-
-COLOR_WHITE = (255, 255, 255)
-COLOR_YELLOW = (255, 255, 0)
-
-COLOR_BTN_BG = (224, 224, 224)
-COLOR_BTN_ACTIVE_BG = (180, 180, 180)
-COLOR_BTN_BORDER = (176, 176, 176)
-
-COLOR_TEXT_DARK = (17, 17, 17)
-
-COLOR_HEART = (255, 100, 150)
+FPS = 30
+TICK_MS = 60000
+API_BASE_URL = "http://localhost:5050/api"
 
 
-class MainScene:
+class LogicBridge:
+    def __init__(self, lcd_state: dict) -> None:
+        self.lcd_state = lcd_state
 
-    def __init__(
-        self,
+    def _get_backend_state(self) -> dict | None:
+        try:
+            with urlopen(f"{API_BASE_URL}/state", timeout=0.2) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except (OSError, URLError, TimeoutError, json.JSONDecodeError):
+            return None
+
+    def sync_state(self) -> bool:
+        current = self._get_backend_state()
+        connected = current is not None
+        if current is None:
+            current = local_state.get_state()
+
+        self.lcd_state.update(current)
+        self.lcd_state["current_message"] = make_message(current)
+        return connected
+
+    def dispatch(self, event: str, payload: dict | None = None) -> dict:
+        message = {
+            "source": "LCD",
+            "event": event,
+            "payload": payload or {},
+        }
+
+        try:
+            request = Request(
+                f"{API_BASE_URL}/event",
+                data=json.dumps(message).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urlopen(request, timeout=0.3) as response:
+                data = json.loads(response.read().decode("utf-8"))
+                current = data.get("state", {})
+        except (OSError, URLError, TimeoutError, json.JSONDecodeError):
+            event_handler.handle_event(message)
+            current = local_state.get_state()
+
+        self.lcd_state.update(current)
+        self.lcd_state["current_message"] = make_message(current)
+        return current
+
+    def publish_feed_button_clicked(self) -> None:
+        self.dispatch("FEED_BUTTON_CLICKED")
+
+    def publish_feed_confirmed(self) -> None:
+        self.dispatch("FEED_CONFIRMED")
+
+    def publish_feed_cancelled(self) -> None:
+        self.dispatch("FEED_CANCELLED")
+
+    def publish_feed_finished(self, hunger_delta: int, caught_food_ids: list[int]) -> None:
+        self.dispatch(
+            "FEED_GAME_FINISHED",
+            {
+                "hunger_delta": hunger_delta,
+                "caught_food_ids": caught_food_ids,
+            },
+        )
+
+    def publish_sleep_button_clicked(self) -> None:
+        self.dispatch("SLEEP_BUTTON_CLICKED")
+
+    def publish_play_button_clicked(self) -> None:
+        self.dispatch("PLAY_BUTTON_CLICKED")
+
+    def publish_play_selected(self, game_type: str) -> None:
+        self.dispatch("PLAY_GAME_SELECTED", {"game_type": game_type})
+
+    def publish_play_finished(self, game_type: str, score: int, fun_delta: int) -> None:
+        self.dispatch(
+            "PLAY_GAME_FINISHED",
+            {
+                "game_type": game_type,
+                "score": score,
+                "fun_delta": fun_delta,
+            },
+        )
+
+    def publish_text_button_clicked(self) -> None:
+        self.dispatch("TEXT_BUTTON_CLICKED")
+
+    def publish_stroke_attempt(self, date_string: str) -> None:
+        self.dispatch("STROKE_ATTEMPT", {"date": date_string})
+
+    def publish_new_baekgyeong(self) -> None:
+        self.dispatch("NEW_BAEKGYEONG_REQUESTED")
+
+
+def make_message(current: dict) -> str:
+    if current.get("is_runaway"):
+        return "백경이가 가출했습니다."
+    if current.get("is_sleeping"):
+        return "쿨쿨... 백경이가 자고 있어요."
+    if current.get("hunger", 0) <= 20:
+        return "배고파요... 크릴새우 주세요!"
+    if current.get("energy", 0) <= 20:
+        return "졸려요... 불을 꺼주세요."
+    if current.get("fun", 0) <= 20:
+        return "심심해요. 같이 놀아요!"
+    return "백경이와 즐거운 시간을 보내세요."
+
+
+def main() -> int:
+    pygame.init()
+    pygame.display.set_caption("Baekgyeong LCD")
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    clock = pygame.time.Clock()
+
+    font_sm, font_md, font_lg = load_fonts()
+    icons = load_icons()
+    sprites = load_sprites()
+    food_sprites = load_food_sprites()
+
+    lcd_state: dict = {}
+    bridge = LogicBridge(lcd_state)
+    backend_connected = bridge.sync_state()
+
+    scene_manager = SceneManager(
         screen,
-        state,
+        lcd_state,
         sprites,
         icons,
+        food_sprites,
         font_sm,
         font_md,
-        font_lg
-    ):
-
-        self.screen = screen
-        self.state = state
-
-        self.sprites = sprites
-        self.icons = icons
-
-        self.font_sm = font_sm
-        self.font_md = font_md
-        self.font_lg = font_lg
-
-        self.feed_button_rect = pygame.Rect(
-            20, 70, 110, 42
-        )
-
-        self.sleep_button_rect = pygame.Rect(
-            20, 120, 110, 42
-        )
-
-        self.play_button_rect = pygame.Rect(
-            20, 170, 110, 42
-        )
-
-        self.talk_button_rect = pygame.Rect(
-            20, 220, 110, 42
-        )
-
-        self.character_rect = pygame.Rect(
-            CHARACTER_X,
-            CHARACTER_Y,
-            CHARACTER_SIZE,
-            CHARACTER_SIZE
-        )
-
-        self.active_button_idx = None
-        self.button_pressed_time = 0
-
-        self.is_bouncing = False
-        self.bounce_start_time = 0
-
-        self.show_heart_effect = False
-        self.heart_effect_start_time = 0
-
-    # -------------------------
-    # Draw
-    # -------------------------
-
-    def draw(self):
-
-        self.draw_main_background()
-
-        self.draw_top_status_bar()
-
-        self.draw_character()
-
-        self.draw_buttons()
-
-        self.draw_dialogue_box()
-
-        self.draw_heart_effect()
-
-    # -------------------------
-    # Background
-    # -------------------------
-
-    def draw_main_background(self):
-
-        pygame.draw.rect(
-            self.screen,
-            COLOR_MAIN_BG,
-            (
-                0,
-                TOP_BAR_HEIGHT,
-                SCREEN_WIDTH,
-                SCREEN_HEIGHT - TOP_BAR_HEIGHT
-            )
-        )
-
-        pygame.draw.rect(
-            self.screen,
-            COLOR_LCD_INNER_BORDER,
-            (
-                0,
-                TOP_BAR_HEIGHT,
-                SCREEN_WIDTH,
-                SCREEN_HEIGHT - TOP_BAR_HEIGHT
-            ),
-            4
-        )
-
-    # -------------------------
-    # Status Bar
-    # -------------------------
-
-    def draw_top_status_bar(self):
-
-        pygame.draw.rect(
-            self.screen,
-            COLOR_TOP_BAR,
-            (0, 0, SCREEN_WIDTH, TOP_BAR_HEIGHT)
-        )
-
-        stat_list = [
-
-            ("hunger", "hunger"),
-
-            ("energy", "energy"),
-
-            ("fun", "fun"),
-
-            ("favorability", "favorability")
-        ]
-
-        col_width = SCREEN_WIDTH // 4
-
-        for i, (state_key, icon_key) in enumerate(
-            stat_list
-        ):
-
-            value = self.state.get(
-                state_key,
-                0
-            )
-
-            start_x = (
-                i * col_width + 10
-            )
-
-            icon = self.icons.get(
-                icon_key
-            )
-
-            if icon:
-
-                self.screen.blit(
-                    icon,
-                    (start_x, 8)
-                )
-
-            text = self.font_md.render(
-                f"{value}%",
-                True,
-                COLOR_WHITE
-            )
-
-            self.screen.blit(
-                text,
-                (start_x + 45, 16)
-            )
-
-    # -------------------------
-    # Character
-    # -------------------------
-
-    def draw_character(self):
-
-        if self.state.get(
-            "is_runaway",
-            False
-        ):
-            return
-
-        stage = self.state.get(
-            "growth_stage",
-            "BABY"
-        )
-
-        current_time = (
-            pygame.time.get_ticks()
-        )
-
-        frame_idx = (
-            current_time // 400
-        ) % 2
-
-        sprite_list = (
-            self.sprites
-            .get(stage, {})
-            .get("BASIC", [])
-        )
-
-        sprite = None
-
-        if len(sprite_list) > frame_idx:
-
-            sprite = sprite_list[
-                frame_idx
-            ]
-
-        offset_y = 0
-
-        if self.is_bouncing:
-
-            elapsed = (
-                current_time
-                - self.bounce_start_time
-            )
-
-            if elapsed < 700:
-
-                offset_y = int(
-                    -12 *
-                    math.sin(
-                        elapsed * 0.02
-                    )
-                )
-
-            else:
-
-                self.is_bouncing = False
-
-        if sprite:
-
-            self.screen.blit(
-                sprite,
-                (
-                    CHARACTER_X,
-                    CHARACTER_Y + offset_y
-                )
-            )
-
-    # -------------------------
-    # Buttons
-    # -------------------------
-
-    def draw_buttons(self):
-
-        labels = [
-            "밥 주기",
-            "잠 자기",
-            "놀 기",
-            "대 화"
-        ]
-
-        rects = [
-            self.feed_button_rect,
-            self.sleep_button_rect,
-            self.play_button_rect,
-            self.talk_button_rect
-        ]
-
+        font_lg,
+    )
+    scene_manager.mqtt_client = bridge
+
+    last_tick = pygame.time.get_ticks()
+    last_sync = 0
+    running = True
+
+    while running:
         now = pygame.time.get_ticks()
 
-        if (
-            now
-            - self.button_pressed_time
-            > 200
-        ):
-            self.active_button_idx = None
+        if now - last_sync >= 500:
+            backend_connected = bridge.sync_state()
+            last_sync = now
 
-        for idx, rect in enumerate(rects):
+        if not backend_connected and now - last_tick >= TICK_MS:
+            bridge.dispatch("TIME_TICK")
+            last_tick = now
 
-            color = (
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-                COLOR_BTN_ACTIVE_BG
+            elif event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_ESCAPE, pygame.K_q):
+                    running = False
+                elif event.key == pygame.K_t:
+                    bridge.dispatch("TIME_TICK")
+                    last_tick = now
+                elif event.key == pygame.K_r:
+                    bridge.dispatch("NEW_BAEKGYEONG_REQUESTED")
+                    scene_manager.go_home()
+                    last_tick = now
+                else:
+                    scene_manager.handle_key(event.key)
 
-                if idx == self.active_button_idx
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                scene_manager.handle_click(*event.pos)
 
-                else COLOR_BTN_BG
-            )
+        scene_manager.draw()
+        pygame.display.flip()
+        clock.tick(FPS)
 
-            pygame.draw.rect(
-                self.screen,
-                color,
-                rect,
-                border_radius=12
-            )
+    pygame.quit()
+    return 0
 
-            pygame.draw.rect(
-                self.screen,
-                COLOR_BTN_BORDER,
-                rect,
-                2,
-                border_radius=12
-            )
 
-            text = self.font_md.render(
-                labels[idx],
-                True,
-                COLOR_TEXT_DARK
-            )
-
-            self.screen.blit(
-                text,
-                text.get_rect(
-                    center=rect.center
-                )
-            )
-
-    # -------------------------
-    # Dialogue
-    # -------------------------
-
-    def draw_dialogue_box(self):
-
-        pygame.draw.rect(
-            self.screen,
-            COLOR_BOTTOM_BAR,
-            (
-                0,
-                SCREEN_HEIGHT
-                - BOTTOM_BAR_HEIGHT,
-                SCREEN_WIDTH,
-                BOTTOM_BAR_HEIGHT
-            )
-        )
-
-        msg = self.state.get(
-            "current_message",
-            "백경이와 즐거운 시간을 보내세요."
-        )
-
-        if len(msg) > 28:
-
-            msg = msg[:28] + "..."
-
-        text = self.font_md.render(
-            msg,
-            True,
-            COLOR_YELLOW
-        )
-
-        self.screen.blit(
-            text,
-            text.get_rect(
-                center=(
-                    SCREEN_WIDTH // 2,
-                    SCREEN_HEIGHT - 25
-                )
-            )
-        )
-    
-    def play_stroke_success_animation(self):
-
-        self.is_bouncing = True
-
-        self.bounce_start_time = (
-            pygame.time.get_ticks()
-        )
-
-        self.show_heart_effect = True
-
-        self.heart_effect_start_time = (
-            pygame.time.get_ticks()
-        )
-
-    # -------------------------
-    # Heart Effect
-    # -------------------------
-
-    def draw_heart_effect(self):
-
-        if not self.show_heart_effect:
-            return
-
-        elapsed = (
-            pygame.time.get_ticks()
-            - self.heart_effect_start_time
-        )
-
-        if elapsed > 1000:
-
-            self.show_heart_effect = False
-            return
-
-        heart = self.font_lg.render(
-            "♥",
-            True,
-            COLOR_HEART
-        )
-
-        self.screen.blit(
-            heart,
-            (
-                CHARACTER_X + 80,
-                CHARACTER_Y - 20
-            )
-        )
-
-    # -------------------------
-    # Click
-    # -------------------------
-
-    def handle_click(
-        self,
-        mx,
-        my
-    ):
-
-        if self.feed_button_rect.collidepoint(
-            mx,
-            my
-        ):
-
-            self.active_button_idx = 0
-            self.button_pressed_time = pygame.time.get_ticks()
-
-            return "FEED_BUTTON_CLICKED"
-
-        if self.sleep_button_rect.collidepoint(
-            mx,
-            my
-        ):
-
-            self.active_button_idx = 1
-            self.button_pressed_time = pygame.time.get_ticks()
-
-            return "SLEEP_BUTTON_CLICKED"
-
-        if self.play_button_rect.collidepoint(
-            mx,
-            my
-        ):
-
-            self.active_button_idx = 2
-            self.button_pressed_time = pygame.time.get_ticks()
-
-            return "PLAY_BUTTON_CLICKED"
-
-        if self.talk_button_rect.collidepoint(
-            mx,
-            my
-        ):
-
-            self.active_button_idx = 3
-            self.button_pressed_time = pygame.time.get_ticks()
-
-            return "TEXT_BUTTON_CLICKED"
-
-        if self.character_rect.collidepoint(
-            mx,
-            my
-        ):
-            return "STROKE_ATTEMPT"
-
-        return None
+if __name__ == "__main__":
+    sys.exit(main())

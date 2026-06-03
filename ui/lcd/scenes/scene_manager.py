@@ -214,21 +214,40 @@ class SceneManager:
         if not self.current_scene:
             return None
 
-        event_name = (
+        click_result = (
             self.current_scene.handle_click(
                 mx,
                 my
             )
         )
 
+        payload = None
+
+        if isinstance(click_result, dict):
+
+            event_name = click_result.get(
+                "event"
+            )
+
+            payload = click_result.get(
+                "payload",
+                {}
+            )
+
+        else:
+
+            event_name = click_result
+
         if event_name:
 
             self.publish_event(
-                event_name
+                event_name,
+                payload
             )
 
             self.change_scene(
-                event_name
+                event_name,
+                payload
             )
 
         return event_name

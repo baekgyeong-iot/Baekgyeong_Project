@@ -18,6 +18,66 @@
         );
 }
 
+.content {
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.status-panel {
+
+    display: grid;
+    gap: 10px;
+    width: min(360px, 84vw);
+    margin: 14px auto 22px;
+    color: #4f5a67;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.status-item {
+
+    display: grid;
+    gap: 5px;
+}
+
+.status-row {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-row strong {
+
+    color: #1f3f5f;
+    font-size: 16px;
+}
+
+.progress {
+
+    height: 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow:
+        inset 0 0 0 1px rgba(70, 120, 150, 0.16);
+}
+
+.fill {
+
+    height: 100%;
+    border-radius: inherit;
+    background:
+        linear-gradient(
+            90deg,
+            #5bbcf4 0%,
+            #7ce0c3 100%
+        );
+    transition: width 0.3s ease;
+}
+
 /* 밤 */
 
 .dashboard.night {

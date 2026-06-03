@@ -44,42 +44,37 @@ FOOD_DIR = os.path.join(
 
 def load_fonts():
 
-    try:
+    font_names = [
+        "AppleGothic",
+        "Malgun Gothic",
+        "malgungothic",
+        "NanumGothic",
+        "Noto Sans CJK KR",
+        "Arial Unicode MS",
+    ]
 
-        font_sm = pygame.font.SysFont(
-            "malgungothic",
-            13,
-            bold=True
-        )
+    def make_font(size):
 
-        font_md = pygame.font.SysFont(
-            "malgungothic",
-            15,
-            bold=True
-        )
+        for name in font_names:
 
-        font_lg = pygame.font.SysFont(
-            "malgungothic",
-            18,
-            bold=True
-        )
+            font = pygame.font.SysFont(
+                name,
+                size,
+                bold=True
+            )
 
-    except Exception:
+            if font:
 
-        font_sm = pygame.font.Font(
+                return font
+
+        return pygame.font.Font(
             None,
-            16
+            size
         )
 
-        font_md = pygame.font.Font(
-            None,
-            20
-        )
-
-        font_lg = pygame.font.Font(
-            None,
-            24
-        )
+    font_sm = make_font(13)
+    font_md = make_font(15)
+    font_lg = make_font(18)
 
     return (
         font_sm,

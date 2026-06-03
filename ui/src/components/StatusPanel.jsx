@@ -1,27 +1,34 @@
 export default function StatusPanel({ stateData }) {
 
+    const safeState = {
+        favorability: stateData?.favorability ?? 0,
+        hunger: stateData?.hunger ?? 0,
+        energy: stateData?.energy ?? 0,
+        fun: stateData?.fun ?? 0
+    };
+
     return (
 
         <div className="status-panel">
 
             <StatusBar
                 label="❤️ 호감도"
-                value={stateData.favorability}
+                value={safeState.favorability}
             />
 
             <StatusBar
                 label="🍖 배고픔"
-                value={stateData.hunger}
+                value={safeState.hunger}
             />
 
             <StatusBar
                 label="⚡ 기력"
-                value={stateData.energy}
+                value={safeState.energy}
             />
 
             <StatusBar
                 label="🎉 재미"
-                value={stateData.fun}
+                value={safeState.fun}
             />
 
         </div>
@@ -30,18 +37,35 @@ export default function StatusPanel({ stateData }) {
 
 function StatusBar({ label, value }) {
 
+    const normalizedValue =
+        Math.max(
+            0,
+            Math.min(
+                100,
+                Number(value) || 0
+            )
+        );
+
     return (
 
         <div className="status-item">
 
-            <span>{label}</span>
+            <div className="status-row">
+
+                <span>{label}</span>
+
+                <strong>
+                    {normalizedValue}/100
+                </strong>
+
+            </div>
 
             <div className="progress">
 
                 <div
                     className="fill"
                     style={{
-                        width: `${value}%`
+                        width: `${normalizedValue}%`
                     }}
                 />
 
