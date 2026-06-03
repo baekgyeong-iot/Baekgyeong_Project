@@ -1,0 +1,112 @@
+.ranking-overlay {
+
+    position: fixed;
+    inset: 0;
+
+    background:
+        rgba(0,0,0,.4);
+
+    backdrop-filter:
+        blur(8px);
+
+    z-index: 1000;
+}
+
+.ranking-modal {
+
+    position: fixed;
+
+    top: 50%;
+    left: 50%;
+
+    transform:
+        translate(-50%, -50%);
+
+    width: 850px;
+    max-width: 95vw;
+
+    height: 650px;
+
+    background: white;
+
+    border-radius: 28px;
+
+    overflow: hidden;
+
+    z-index: 1001;
+
+    box-shadow:
+        0 20px 50px rgba(0,0,0,.2);
+}
+
+.ranking-header {
+
+    height: 90px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #00b4db,
+            #0083b0
+        );
+
+    color: white;
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items: center;
+
+    padding: 0 32px;
+}
+
+.close-btn {
+
+    border: none;
+
+    background: none;
+
+    color: white;
+
+    font-size: 34px;
+
+    cursor: pointer;
+}
+
+.ranking-tabs {
+
+    display: flex;
+
+    background: #f2f7fb;
+}
+
+.tab {
+
+    flex: 1;
+
+    padding: 18px;
+
+    border: none;
+
+    background: none;
+
+    cursor: pointer;
+
+    font-size: 18px;
+
+    font-weight: 700;
+}
+
+.tab.active {
+
+    background: white;
+
+    color: #0a74da;
+}
+
+.ranking-content {
+
+    padding: 28px;
+}

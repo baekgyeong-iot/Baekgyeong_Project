@@ -1,0 +1,175 @@
+/* src/styles/GrowthTab.css */
+
+.growth-container {
+
+    width: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 40px;
+}
+
+/* ---------------- */
+/* 성장 단계 */
+/* ---------------- */
+
+.growth-tree {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 32px;
+
+    width: 100%;
+
+    margin-top: 20px;
+}
+
+.stage-card {
+
+    width: 180px;
+
+    height: 220px;
+
+    border-radius: 24px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    transition: all .25s ease;
+
+    cursor: pointer;
+}
+
+.stage-card:hover {
+
+    transform: scale(1.05);
+}
+
+/* 활성 단계 */
+
+.stage-card.active {
+
+    background:
+        linear-gradient(
+            180deg,
+            #e8fbff,
+            #b8ecff
+        );
+
+    box-shadow:
+        0 12px 30px
+        rgba(0,0,0,.12);
+}
+
+/* 잠금 단계 */
+
+.stage-card.locked {
+
+    background:
+        rgba(230,230,230,.8);
+
+    filter: blur(1px);
+
+    opacity: .55;
+}
+
+.stage-icon {
+
+    font-size: 72px;
+
+    margin-bottom: 18px;
+}
+
+.stage-title {
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+    margin-bottom: 6px;
+}
+
+.stage-subtitle {
+
+    color: #666;
+
+    font-size: 13px;
+
+    letter-spacing: 1px;
+}
+
+/* ---------------- */
+/* 성장 정보 카드 */
+/* ---------------- */
+
+.growth-info-card {
+
+    width: 90%;
+
+    max-width: 900px;
+
+    background:
+        rgba(255,255,255,.7);
+
+    backdrop-filter: blur(12px);
+
+    border-radius: 24px;
+
+    padding: 28px;
+
+    box-shadow:
+        0 8px 20px
+        rgba(0,0,0,.08);
+}
+
+.growth-info-card h3 {
+
+    margin-bottom: 24px;
+
+    text-align: center;
+
+    color: #0f4c75;
+}
+
+.info-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        160px
+        1fr;
+
+    gap: 14px 24px;
+
+    font-size: 15px;
+}
+
+.info-grid div {
+
+    padding: 6px 0;
+}
+
+.info-grid div:nth-child(odd) {
+
+    font-weight: 700;
+
+    color: #0f4c75;
+}
+
+.info-grid div:nth-child(even) {
+
+    color: #333;
+}

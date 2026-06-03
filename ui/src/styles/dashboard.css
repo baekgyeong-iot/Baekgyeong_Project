@@ -1,0 +1,31 @@
+.dashboard {
+
+    min-height: 100vh;
+
+    transition:
+        background 0.5s ease;
+}
+
+/* 낮 */
+
+.dashboard.day {
+
+    background:
+        linear-gradient(
+            180deg,
+            #87ceeb 0%,
+            #d7f3ff 100%
+        );
+}
+
+/* 밤 */
+
+.dashboard.night {
+
+    background:
+        linear-gradient(
+            180deg,
+            #08142f 0%,
+            #0f2d5f 100%
+        );
+}

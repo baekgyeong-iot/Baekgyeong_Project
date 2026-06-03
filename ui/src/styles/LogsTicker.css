@@ -1,0 +1,99 @@
+.logs-ticker {
+
+    width: 280px;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+}
+
+.logs-header {
+
+    font-size: 20px;
+    font-weight: 700;
+
+    color: white;
+
+    text-align: center;
+}
+
+.logs-list {
+
+    flex: 1;
+
+    overflow-y: auto;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+}
+
+.logs-list::-webkit-scrollbar {
+
+    width: 6px;
+}
+
+.logs-list::-webkit-scrollbar-thumb {
+
+    background: rgba(255,255,255,.3);
+    border-radius: 10px;
+}
+
+.log-card {
+
+    background: rgba(255,255,255,.15);
+
+    backdrop-filter: blur(14px);
+
+    border-radius: 18px;
+
+    padding: 14px;
+
+    color: white;
+
+    animation: fadeIn .4s ease;
+}
+
+.log-message {
+
+    font-size: 14px;
+    line-height: 1.5;
+
+    margin-bottom: 8px;
+}
+
+.log-time {
+
+    font-size: 11px;
+
+    opacity: .7;
+
+    text-align: right;
+}
+
+.empty-log {
+
+    text-align: center;
+
+    color: rgba(255,255,255,.7);
+
+    margin-top: 40px;
+}
+
+@keyframes fadeIn {
+
+    from {
+
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
