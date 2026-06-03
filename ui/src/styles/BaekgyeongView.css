@@ -1,0 +1,92 @@
+.ocean-view {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+.whale-container {
+
+    animation:
+        floatWhale 4s ease-in-out infinite;
+}
+
+@keyframes floatWhale {
+
+    0% {
+        transform:
+            translateY(0px);
+    }
+
+    50% {
+        transform:
+            translateY(-18px);
+    }
+
+    100% {
+        transform:
+            translateY(0px);
+    }
+}
+
+.speech-bubble {
+
+    margin-top: 24px;
+
+    padding: 14px 22px;
+
+    background: white;
+
+    border-radius: 20px;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    box-shadow:
+        0 4px 14px rgba(0,0,0,.12);
+
+    max-width: 320px;
+
+    text-align: center;
+}
+
+.inventory-button {
+
+    margin-top: 24px;
+
+    border: none;
+
+    background: #38bdf8;
+
+    color: white;
+
+    border-radius: 14px;
+
+    padding: 12px 22px;
+
+    font-size: 15px;
+
+    cursor: pointer;
+
+    transition: .2s;
+}
+
+.inventory-button:hover {
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,.15);
+}

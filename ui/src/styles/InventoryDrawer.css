@@ -1,0 +1,136 @@
+.drawer-overlay {
+
+    position:fixed;
+    inset:0;
+
+    background:
+        rgba(0,0,0,.3);
+
+    backdrop-filter:
+        blur(6px);
+
+    z-index:999;
+}
+
+.inventory-drawer {
+
+    position:fixed;
+
+    right:0;
+    top:0;
+
+    width:780px;
+    height:100vh;
+
+    background:
+        linear-gradient(
+            180deg,
+            #eff7ff,
+            #dceeff
+        );
+
+    z-index:1000;
+
+    overflow-y:auto;
+
+    animation:
+        slideIn .3s ease;
+}
+
+@keyframes slideIn {
+
+    from {
+        transform:
+            translateX(100%);
+    }
+
+    to {
+        transform:
+            translateX(0);
+    }
+}
+
+.drawer-header {
+
+    height:110px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #00b7d9,
+            #3182ff
+        );
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:
+        0 40px;
+}
+
+.drawer-title {
+
+    color:white;
+
+    font-size:42px;
+    font-weight:800;
+}
+
+.close-btn {
+
+    border:none;
+    background:none;
+
+    color:white;
+
+    font-size:42px;
+
+    cursor:pointer;
+}
+
+.drawer-content {
+
+    padding:40px;
+}
+
+.drawer-description {
+
+    text-align:center;
+
+    font-size:24px;
+
+    color:#49566d;
+
+    margin-bottom:30px;
+}
+
+.gift-grid {
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap:24px;
+}
+
+.inventory-tip {
+
+    margin-top:40px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #d7f1ff,
+            #b8f0ff
+        );
+
+    border-radius:20px;
+
+    padding:24px;
+
+    font-size:22px;
+
+    color:#445066;
+}

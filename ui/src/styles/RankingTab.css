@@ -1,0 +1,41 @@
+.ranking-list {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 20px;
+}
+
+.ranking-card {
+
+    background: #f8fbff;
+
+    border-radius: 20px;
+
+    padding: 20px;
+
+    box-shadow:
+        0 4px 15px rgba(0,0,0,.06);
+}
+
+.ranking-card h3 {
+
+    text-align: center;
+
+    margin-bottom: 18px;
+}
+
+.ranking-item {
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    padding: 12px 0;
+
+    border-bottom:
+        1px solid #eee;
+}
