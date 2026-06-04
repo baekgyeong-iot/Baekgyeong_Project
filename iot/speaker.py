@@ -5,13 +5,13 @@ import random
 
 BABY_DIALOGS = [
 
-    "배고파...",
+    "안녕!",
+
+    "배고파!",
 
     "놀아줘!",
 
-    "졸려...",
-
-    "좋아해!"
+    "졸려..."
 ]
 
 
@@ -21,7 +21,7 @@ CHILD_DIALOGS = [
 
     "같이 놀자!",
 
-    "선물 줄까?",
+    "심심해!",
 
     "배가 고파!"
 ]
@@ -35,85 +35,128 @@ ADULT_DIALOGS = [
 
     "항상 고마워.",
 
-    "졸린데..."
+    "행복해!"
 ]
 
 
-GIFT_MESSAGES = [
+HIGH_FAVOR_DIALOGS = [
 
-    "작은 선물을 준비했어!",
+    "정말 좋아해!",
 
-    "이거 받아!",
+    "항상 함께 있어줘서 고마워!",
 
-    "널 위해 준비했어!"
+    "선물을 준비했어!"
 ]
 
 
 def play_sound(sound_name):
 
-    print("\n=========================")
-    print(f"[SPEAKER SOUND] {sound_name}")
-    print("=========================")
+    print(
+        f"[SPEAKER] {sound_name}"
+    )
 
 
 def play_warning_sound():
 
-    play_sound("WARNING")
+    play_sound(
+        "WARNING"
+    )
 
 
 def play_feed_sound():
 
-    play_sound("FEED")
+    play_sound(
+        "FEED"
+    )
 
 
 def play_play_sound():
 
-    play_sound("PLAY")
-
-
-def play_sleep_sound():
-
-    play_sound("SLEEP")
+    play_sound(
+        "PLAY"
+    )
 
 
 def play_pet_sound():
 
-    play_sound("PET")
+    play_sound(
+        "PET"
+    )
 
 
-def speak_random_dialog(stage, favorability):
+def play_evolution_sound():
 
-    if stage == "BABY":
+    play_sound(
+        "EVOLUTION"
+    )
+
+
+def play_runaway_sound():
+
+    play_sound(
+        "RUNAWAY"
+    )
+
+
+def speak_random_dialog(
+
+    stage,
+
+    favorability
+):
+
+    if favorability >= 80:
 
         dialog = random.choice(
-            BABY_DIALOGS
-        )
-
-    elif stage == "CHILD":
-
-        dialog = random.choice(
-            CHILD_DIALOGS
+            HIGH_FAVOR_DIALOGS
         )
 
     else:
 
-        dialog = random.choice(
-            ADULT_DIALOGS
-        )
+        if stage == "BABY":
 
-    print("\n=========================")
-    print("[DIALOG]")
-    print(dialog)
-    print("=========================")
+            dialog = random.choice(
+                BABY_DIALOGS
+            )
+
+        elif stage == "CHILD":
+
+            dialog = random.choice(
+                CHILD_DIALOGS
+            )
+
+        else:
+
+            dialog = random.choice(
+                ADULT_DIALOGS
+            )
+
+    print(
+        f"[DIALOG] {dialog}"
+    )
+
+    return dialog
 
 
 def gift_event():
 
+    gifts = [
+
+        "꽃",
+
+        "사탕",
+
+        "편지",
+
+        "장난감"
+    ]
+
     gift = random.choice(
-        GIFT_MESSAGES
+        gifts
     )
 
-    print("\n=========================")
-    print("[GIFT EVENT]")
-    print(gift)
-    print("=========================")
+    print(
+        f"[GIFT] {gift}"
+    )
+
+    return gift
