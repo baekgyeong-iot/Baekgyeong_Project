@@ -1,7 +1,6 @@
 # sensor_reader.py
 
 import random
-import time
 
 from mqtt_publisher import (
     publish_event,
@@ -9,12 +8,13 @@ from mqtt_publisher import (
 )
 
 
+# =========================
+# 조도 센서
+# =========================
+
 def send_light_event():
 
     light_value = random.randint(0, 300)
-
-    is_dark = light_value < 120
-
 
     event_data = {
 
@@ -26,7 +26,7 @@ def send_light_event():
 
             "light_value": light_value,
 
-            "is_dark": is_dark
+            "is_dark": light_value < 120
         }
     }
 
@@ -36,9 +36,13 @@ def send_light_event():
     )
 
 
-def send_tilt_event():
+# =========================
+# 흔들기 센서
+# =========================
 
-    shake_power = random.randint(0, 10)
+def send_shake_event():
+
+    shake_power = random.randint(1, 10)
 
     event_data = {
 
@@ -58,91 +62,176 @@ def send_tilt_event():
     )
 
 
-def send_feed_event():
+# =========================
+# 먹이 게임 시작
+# =========================
 
-    food_list = [
+def start_feed_game():
+
+    publish_event(
+
+        TOPICS["FEED_START"],
+
+        {
+            "event": "FEED_GAME_STARTED"
+        }
+    )
+
+
+# =========================
+# 좌우 이동
+# =========================
+
+def move_left():
+
+    publish_event(
+
+        TOPICS["FEED_CONTROL"],
+
+        {
+            "event": "MOVE_LEFT"
+        }
+    )
+
+
+def move_right():
+
+    publish_event(
+
+        TOPICS["FEED_CONTROL"],
+
+        {
+            "event": "MOVE_RIGHT"
+        }
+    )
+
+
+# =========================
+# 먹이 먹음
+# =========================
+
+def food_caught():
+
+    foods = [
 
         ("APPLE", 10),
 
-        ("MEAT", 20),
-
         ("BREAD", 15),
+
+        ("MEAT", 20),
 
         ("FISH", 25)
     ]
 
     food_name, recovery = random.choice(
-        food_list
+        foods
     )
 
-    event_data = {
+    publish_event(
 
-        "source": "TOUCH_SENSOR",
+        TOPICS["FEED_RESULT"],
 
-        "event": "FOOD_CAUGHT",
+        {
 
-        "payload": {
+            "event": "FOOD_CAUGHT",
 
-            "food_name": food_name,
+            "payload": {
 
-            "recovery": recovery
+                "food_name": food_name,
+
+                "recovery": recovery
+            }
         }
-    }
-
-    publish_event(
-        TOPICS["FEED"],
-        event_data
     )
 
 
-def send_pet_event():
+# =========================
+# 놀이 게임 시작
+# =========================
 
-    event_data = {
-
-        "source": "LCD_TOUCH",
-
-        "event": "PET_DETECTED",
-
-        "payload": {}
-    }
+def start_play_game():
 
     publish_event(
+
+        TOPICS["PLAY_START"],
+
+        {
+            "event": "PLAY_GAME_STARTED"
+        }
+    )
+
+
+# =========================
+# LCD 터치
+# =========================
+
+def pet_detected():
+
+    publish_event(
+
         TOPICS["PET"],
-        event_data
+
+        {
+
+            "event": "PET_DETECTED"
+        }
     )
 
 
-def send_text_button_event():
+# =========================
+# 대화 버튼
+# =========================
 
-    event_data = {
-
-        "source": "TEXT_BUTTON",
-
-        "event": "TEXT_BUTTON_CLICKED",
-
-        "payload": {}
-    }
+def text_button_clicked(
+    stage="BABY",
+    favorability=0
+):
 
     publish_event(
+
         TOPICS["TEXT"],
-        event_data
+
+        {
+
+            "event": "TEXT_BUTTON_CLICKED",
+
+            "payload": {
+
+                "stage": stage,
+
+                "favorability": favorability
+            }
+        }
     )
 
 
-if __name__ == "__main__":
+# =========================
+# 진화
+# =========================
 
-    for i in range(5):
+def evolution_event():
 
-        print(f"\n===== EVENT LOOP {i+1} =====")
+    publish_event(
 
-        send_light_event()
+        TOPICS["EVOLUTION"],
 
-        send_tilt_event()
+        {
+            "event": "EVOLUTION"
+        }
+    )
 
-        send_feed_event()
 
-        send_pet_event()
+# =========================
+# 가출
+# =========================
 
-        send_text_button_event()
+def runaway_event():
 
-        time.sleep(3)
+    publish_event(
+
+        TOPICS["RUNAWAY"],
+
+        {
+            "event": "RUNAWAY"
+        }
+    )
