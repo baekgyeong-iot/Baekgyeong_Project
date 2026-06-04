@@ -65,13 +65,11 @@ def food_caught():
 
     foods = [
 
-        ("APPLE", 10),
+        ("새우", 8),
 
-        ("BREAD", 15),
+        ("어묵", 10),
 
-        ("MEAT", 20),
-
-        ("FISH", 25)
+        ("물고기", 15)
     ]
 
     food_name, recovery = random.choice(
