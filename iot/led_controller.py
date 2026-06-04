@@ -56,20 +56,41 @@ def update_status_leds(state):
 
     print("\n===== LED STATUS =====")
 
-    print(
-        "HUNGER:",
-        led_state["hunger"]
+        print(
+        f"HUNGER ({state['hunger']}) -> "
+        f"{led_state['hunger']}"
     )
 
     print(
-        "ENERGY:",
-        led_state["energy"]
+        f"ENERGY ({state['energy']}) -> "
+        f"{led_state['energy']}"
     )
 
     print(
-        "FUN:",
-        led_state["fun"]
+        f"FUN ({state['fun']}) -> "
+        f"{led_state['fun']}"
     )
+
+    if state["hunger"] <= WARNING_THRESHOLD:
+
+        warning_alert(
+            "HUNGER"
+        )
+
+    if state["energy"] <= WARNING_THRESHOLD:
+
+        warning_alert(
+            "ENERGY"
+        )
+
+    if state["fun"] <= WARNING_THRESHOLD:
+
+        warning_alert(
+            "FUN"
+        )
+
+    return led_state
+
 
 
 def warning_alert(stat_name):
@@ -81,7 +102,7 @@ def warning_alert(stat_name):
     )
 
     print(
-        "LED BLINKING"
+        "[LED] BLINK_RED"
     )
 
 
@@ -90,7 +111,7 @@ def show_evolution_effect():
     print("\n===== EVOLUTION =====")
 
     print(
-        "LED RAINBOW EFFECT"
+        "[LED] RAINBOW EFFECT"
     )
 
 
@@ -99,5 +120,5 @@ def show_runaway_effect():
     print("\n===== RUNAWAY =====")
 
     print(
-        "LED FLASH EFFECT"
+        "[LED] FLASH EFFECT"
     )
