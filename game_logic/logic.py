@@ -13,6 +13,8 @@ LOW_STAT_THRESHOLD = 50
 RUNAWAY_LOW_THRESHOLD = 10
 
 
+# logic.py는 백경이의 실제 규칙을 담당한다.
+# 상태 저장 자체는 state.py가 맡고, 이 파일은 수치를 어떻게 바꿀지 결정한다.
 def _parse_datetime(value: str | None) -> datetime | None:
     if not value:
         return None
@@ -34,6 +36,7 @@ def days_between(start: str, end: str | None = None) -> int:
 
 
 def calculate_mood() -> str:
+    """현재 수치와 상태를 기준으로 mood를 계산한다."""
     current = state.baekgyeong_state
     if current["is_runaway"]:
         return state.MOOD_RUNAWAY
@@ -65,6 +68,7 @@ def led_color(value: int) -> str:
 
 
 def get_led_state() -> dict[str, str]:
+    """현재 수치를 LED 색으로 변환한다."""
     current = state.baekgyeong_state
     return {
         "hunger_led": led_color(current["hunger"]),
@@ -74,6 +78,7 @@ def get_led_state() -> dict[str, str]:
 
 
 def decay_stats(hunger_delta: int = -1, fun_delta: int = -1, energy_delta: int = -1) -> dict[str, Any]:
+    """한 번의 시간 흐름에 따른 수치 감소를 적용한다."""
     if state.baekgyeong_state["is_runaway"]:
         return state.get_state()
     state.adjust_stat("hunger", hunger_delta)
@@ -86,6 +91,7 @@ def decay_stats(hunger_delta: int = -1, fun_delta: int = -1, energy_delta: int =
 
 
 def time_tick(hunger_delta: int = -1, fun_delta: int = -1, energy_delta: int = -1) -> dict[str, Any]:
+    """서버 실행 중 주기적으로 호출되는 시간 흐름 이벤트."""
     before = state.get_state()
     after = decay_stats(hunger_delta, fun_delta, energy_delta)
     state.baekgyeong_state["last_tick_at"] = state.now_string()
@@ -156,6 +162,7 @@ def apply_offline_progress(
     fun_delta: int = -1,
     energy_delta: int = -1,
 ) -> dict[str, Any]:
+    """앱이 꺼져 있던 시간만큼 TIME_TICK이 지난 것으로 계산한다."""
     if state.baekgyeong_state["is_runaway"]:
         return state.add_log("OFFLINE_PROGRESS_SKIPPED", {"reason": "is_runaway"})
 
@@ -207,6 +214,7 @@ def apply_offline_progress(
 
 
 def feed(hunger_delta: int, caught_food_ids: list[int] | None = None) -> dict[str, Any]:
+    """먹기 게임 결과를 상태에 반영한다."""
     if state.baekgyeong_state["is_runaway"]:
         return state.add_log("ACTION_IGNORED", {"reason": "is_runaway", "action": "feed"})
     new_hunger = state.adjust_stat("hunger", hunger_delta)
@@ -223,6 +231,7 @@ def feed(hunger_delta: int, caught_food_ids: list[int] | None = None) -> dict[st
 
 
 def play(game_type: str, score: int, fun_delta: int) -> dict[str, Any]:
+    """놀이 게임 결과를 상태에 반영한다."""
     if state.baekgyeong_state["is_runaway"]:
         return state.add_log("ACTION_IGNORED", {"reason": "is_runaway", "action": "play"})
     new_fun = state.adjust_stat("fun", fun_delta)
@@ -240,6 +249,7 @@ def play(game_type: str, score: int, fun_delta: int) -> dict[str, Any]:
 
 
 def start_sleep() -> dict[str, Any]:
+    """잠자기 상태로 전환한다."""
     if state.baekgyeong_state["is_runaway"]:
         return state.add_log("ACTION_IGNORED", {"reason": "is_runaway", "action": "sleep"})
     state.baekgyeong_state["is_sleeping"] = True
@@ -248,6 +258,7 @@ def start_sleep() -> dict[str, Any]:
 
 
 def sleep_tick(energy_delta: int = 1) -> dict[str, Any]:
+    """자는 동안 주기적으로 energy를 회복한다."""
     if not state.baekgyeong_state["is_sleeping"]:
         return state.add_log("SLEEP_TICK_IGNORED", {"reason": "not_sleeping"})
     current_energy = state.adjust_stat("energy", energy_delta)
@@ -256,6 +267,7 @@ def sleep_tick(energy_delta: int = 1) -> dict[str, Any]:
 
 
 def end_sleep(full_energy_delta: int) -> dict[str, Any]:
+    """잠을 종료하고 필요하면 energy를 추가 회복한다."""
     state.baekgyeong_state["is_sleeping"] = False
     if full_energy_delta > 0:
         state.adjust_stat("energy", full_energy_delta)
@@ -272,6 +284,7 @@ def end_sleep(full_energy_delta: int) -> dict[str, Any]:
 
 
 def stroke(date_string: str | None = None, favorability_delta: int = 5) -> dict[str, Any]:
+    """하루 1회 쓰다듬기 성공 시 호감도를 올린다."""
     current_date = date_string or state.today_string()
     if state.baekgyeong_state["last_stroke_time"] == current_date:
         return state.add_log(
@@ -315,6 +328,7 @@ def _runaway_reason() -> str | None:
 
 
 def check_runaway(date_string: str | None = None) -> dict[str, Any]:
+    """가출 위험 상태가 하루 이상 유지되었는지 검사한다."""
     current_date = date_string or state.today_string()
     reason = _runaway_reason()
 
@@ -350,6 +364,7 @@ def check_runaway(date_string: str | None = None) -> dict[str, Any]:
 
 
 def trigger_runaway(reason: str, date_string: str | None = None) -> dict[str, Any]:
+    """가출 상태로 전환한다."""
     current_date = date_string or state.today_string()
     state.baekgyeong_state["is_runaway"] = True
     refresh_mood()
@@ -366,6 +381,7 @@ def trigger_runaway(reason: str, date_string: str | None = None) -> dict[str, An
 
 
 def new_baekgyeong(date_string: str | None = None) -> dict[str, Any]:
+    """새 백경이를 키우기 위해 상태를 초기화한다."""
     new_state = state.reset_state(date_string)
     return state.add_log(
         "NEW_BAEKGYEONG_REQUESTED",

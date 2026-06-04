@@ -30,6 +30,8 @@ STAGE_ADULT = "ADULT"
 SAVE_PATH = Path(__file__).with_name("baekgyeong_save.json")
 
 
+# state.py는 현재 백경이 상태와 저장 파일을 관리한다.
+# 다른 파일은 가능하면 get_state(), adjust_stat(), add_log() 같은 함수를 통해 상태를 바꾼다.
 def today_string() -> str:
     return date.today().isoformat()
 
