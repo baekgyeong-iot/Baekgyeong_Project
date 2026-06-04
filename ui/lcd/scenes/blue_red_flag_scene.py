@@ -1,49 +1,373 @@
+#blue_red_flag_scene.py
+import pygame
 import random
 
-import pygame
+SCREEN_WIDTH = 480
+SCREEN_HEIGHT = 320
+
+GAME_DURATION = 30
+
+LED_INTERVAL = 1200
+POSE_DURATION = 300
+
+COLOR_BG = (73, 116, 181)
+
+COLOR_WHITE = (255, 255, 255)
+
+COLOR_BLUE = (100, 100, 255)
+COLOR_RED = (255, 100, 100)
 
 
 class BlueRedFlagScene:
-    def __init__(self, screen, state, sprites, mqtt_client, font_sm, font_md, font_lg):
+
+    def __init__(
+        self,
+        screen,
+        state,
+        sprites,
+        mqtt_client,
+        font_sm,
+        font_md,
+        font_lg
+    ):
+
         self.screen = screen
         self.state = state
         self.sprites = sprites
         self.mqtt_client = mqtt_client
+
         self.font_sm = font_sm
         self.font_md = font_md
         self.font_lg = font_lg
-        self.started_at = pygame.time.get_ticks()
-        self.finished = False
+
         self.score = 0
-        self.direction = random.choice(["LEFT", "RIGHT"])
 
-    def draw(self):
-        self.screen.fill((73, 116, 181))
-        title = self.font_lg.render("청기백기 게임", True, (255, 255, 255))
-        guide = self.font_md.render("3초 뒤 자동 결과가 나와요", True, (255, 255, 255))
-        self.screen.blit(title, title.get_rect(center=(240, 38)))
-        self.screen.blit(guide, guide.get_rect(center=(240, 70)))
+        self.finished = False
 
-        stage = self.state.get("growth_stage", "BABY")
-        key = "BLUE_RED_LEFT" if self.direction == "LEFT" else "BLUE_RED_RIGHT"
-        sprite = self.sprites.get(stage, {}).get(key)
-        if sprite:
-            self.screen.blit(sprite, (185, 125))
+        self.start_time = (
+            pygame.time.get_ticks()
+        )
+
+        self.last_led_change = (
+            pygame.time.get_ticks()
+        )
+
+        self.last_input_time = 0
+
+        self.player_pose = "IDLE"
+
+        self.pose_start_time = 0
+
+        self.current_led = (
+            random.choice(
+                ["LEFT", "RIGHT"]
+            )
+        )
+
+        self.send_led()
+
+    # --------------------------------
+    # LED MQTT
+    # --------------------------------
+
+    def send_led(self):
+
+        if not self.mqtt_client:
+            return
+
+        if self.current_led == "LEFT":
+
+            self.mqtt_client.publish_led_left()
+
+        else:
+
+            self.mqtt_client.publish_led_right()
+
+    # --------------------------------
+    # Update
+    # --------------------------------
 
     def update(self):
-        if not self.finished and pygame.time.get_ticks() - self.started_at >= 3000:
+
+        now = pygame.time.get_ticks()
+
+        elapsed = (
+            now
+            - self.start_time
+        ) // 1000
+
+        if elapsed >= GAME_DURATION:
+
             self.finished = True
-            self.score = 100
+
+            if self.mqtt_client:
+
+                self.mqtt_client.publish_led_off()
+
+            return
+
+        # LED 변경
+
+        if (
+            now
+            - self.last_led_change
+            >= LED_INTERVAL
+        ):
+
+            self.current_led = (
+                random.choice(
+                    ["LEFT", "RIGHT"]
+                )
+            )
+
+            self.last_led_change = now
+
+            self.send_led()
+
+        # 포즈 복귀
+
+        if (
+            self.player_pose != "IDLE"
+            and
+            now - self.pose_start_time
+            >= POSE_DURATION
+        ):
+
+            self.player_pose = "IDLE"
+
+    # --------------------------------
+    # Draw
+    # --------------------------------
+
+    def draw(self):
+
+        self.screen.fill(
+            COLOR_BG
+        )
+
+        self.draw_header()
+
+        self.draw_led()
+
+        self.draw_character()
+
+    # --------------------------------
+    # Header
+    # --------------------------------
+
+    def draw_header(self):
+
+        remain = max(
+
+            0,
+
+            GAME_DURATION
+            -
+            (
+                pygame.time.get_ticks()
+                -
+                self.start_time
+            ) // 1000
+        )
+
+        score_text = self.font_md.render(
+            f"점수 : {self.score}",
+            True,
+            COLOR_WHITE
+        )
+
+        time_text = self.font_md.render(
+            f"남은시간 : {remain}",
+            True,
+            COLOR_WHITE
+        )
+
+        self.screen.blit(
+            score_text,
+            (20, 20)
+        )
+
+        self.screen.blit(
+            time_text,
+            (320, 20)
+        )
+
+    # --------------------------------
+    # LCD 표시용 LED
+    # --------------------------------
+
+    def draw_led(self):
+
+        left_color = (
+
+            COLOR_BLUE
+
+            if self.current_led == "LEFT"
+
+            else COLOR_WHITE
+        )
+
+        right_color = (
+
+            COLOR_RED
+
+            if self.current_led == "RIGHT"
+
+            else COLOR_WHITE
+        )
+
+        pygame.draw.circle(
+            self.screen,
+            left_color,
+            (120, 90),
+            25
+        )
+
+        pygame.draw.circle(
+            self.screen,
+            right_color,
+            (360, 90),
+            25
+        )
+
+    # --------------------------------
+    # Character
+    # --------------------------------
+
+    def draw_character(self):
+
+        stage = self.state.get(
+            "growth_stage",
+            "BABY"
+        )
+
+        sprite = None
+
+        if self.player_pose == "LEFT":
+
+            sprite = (
+                self.sprites
+                .get(stage, {})
+                .get(
+                    "BLUE_RED_LEFT"
+                )
+            )
+
+        elif self.player_pose == "RIGHT":
+
+            sprite = (
+                self.sprites
+                .get(stage, {})
+                .get(
+                    "BLUE_RED_RIGHT"
+                )
+            )
+
+        else:
+
+            basic = (
+                self.sprites
+                .get(stage, {})
+                .get(
+                    "BASIC",
+                    []
+                )
+            )
+
+            if basic:
+
+                sprite = basic[
+                    (
+                        pygame.time.get_ticks()
+                        // 400
+                    )
+                    %
+                    len(basic)
+                ]
+
+        if sprite:
+
+            rect = sprite.get_rect(
+                center=(240, 220)
+            )
+
+            self.screen.blit(
+                sprite,
+                rect
+            )
+
+    # --------------------------------
+    # MQTT BUTTON
+    # --------------------------------
+
+    def handle_button(
+        self,
+        direction
+    ):
+
+        now = pygame.time.get_ticks()
+
+        # 연타 방지
+
+        if (
+            now
+            - self.last_input_time
+            < 250
+        ):
+            return
+
+        self.last_input_time = now
+
+        self.player_pose = (
+            direction
+        )
+
+        self.pose_start_time = now
+
+        # 정답
+
+        if (
+            direction
+            ==
+            self.current_led
+        ):
+
+            self.score += 10
+
+        else:
+
+            self.score = max(
+                0,
+                self.score - 5
+            )
+
+    # --------------------------------
+    # 종료 여부
+    # --------------------------------
 
     def is_finished(self):
+
         return self.finished
 
-    def get_result(self):
-        return {
-            "game_type": "blue_red_flag",
-            "score": self.score,
-            "fun_delta": 10,
-        }
+    # --------------------------------
+    # 결과 반환
+    # --------------------------------
 
-    def handle_click(self, mx, my):
-        return None
+    def get_result(self):
+
+        fun_delta = min(
+            30,
+            self.score // 10
+        )
+
+        return {
+
+            "game_type":
+                "blue_red_flag",
+
+            "score":
+                self.score,
+
+            "fun_delta":
+                fun_delta
+        }

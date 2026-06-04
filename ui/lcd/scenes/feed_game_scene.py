@@ -1,58 +1,408 @@
+# scenes/feed_game_scene.py
+
 import pygame
+import random
+
+from data.food_data import FOOD_LIST
+
+
+SCREEN_WIDTH = 480
+SCREEN_HEIGHT = 320
+
+PLAYER_Y = 190
+
+GAME_TIME = 30000
+
+PLAYER_WIDTH = 110
+PLAYER_HEIGHT = 110
+
+FOOD_SIZE = 48
+
+MOVE_SPEED = 20
 
 
 class FeedGameScene:
-    def __init__(self, screen, state, sprites, food_sprites, font_sm, font_md, font_lg):
+
+    def __init__(
+        self,
+        screen,
+        state,
+        sprites,
+        food_sprites,
+        font_sm,
+        font_md,
+        font_lg
+    ):
+
         self.screen = screen
         self.state = state
+
         self.sprites = sprites
         self.food_sprites = food_sprites
+
         self.font_sm = font_sm
         self.font_md = font_md
         self.font_lg = font_lg
-        self.started_at = pygame.time.get_ticks()
-        self.finished = False
+
+        self.stage = state.get(
+            "growth_stage",
+            "BABY"
+        )
+
+        self.player_x = (
+            SCREEN_WIDTH // 2
+            - PLAYER_WIDTH // 2
+        )
+
+        self.direction = "CENTER"
+
+        self.foods = []
+
         self.caught_food_ids = []
-        self.hunger_delta = 0
-        self.player_x = 210
 
-    def draw(self):
-        self.screen.fill((73, 116, 181))
-        title = self.font_lg.render("밥 먹기 게임", True, (255, 255, 255))
-        guide = self.font_md.render("좌우 방향키로 움직이고 3초 뒤 결과가 나와요", True, (255, 255, 255))
-        self.screen.blit(title, title.get_rect(center=(240, 35)))
-        self.screen.blit(guide, guide.get_rect(center=(240, 66)))
+        self.total_hunger_gain = 0
 
-        stage = self.state.get("growth_stage", "BABY")
-        sprite_list = self.sprites.get(stage, {}).get("FEED", [])
-        sprite = sprite_list[(pygame.time.get_ticks() // 300) % len(sprite_list)] if sprite_list else None
-        if sprite:
-            self.screen.blit(sprite, (self.player_x, 170))
+        self.start_time = pygame.time.get_ticks()
 
-        for idx, food in enumerate(self.food_sprites.values()):
-            if food:
-                self.screen.blit(food, (130 + idx * 85, 110))
+        self.last_spawn_time = 0
+
+        # 음식 생성 주기 랜덤
+        self.spawn_interval = random.randint(
+            500,
+            1500
+        )
+
+    # -----------------
+    # update
+    # -----------------
 
     def update(self):
-        if not self.finished and pygame.time.get_ticks() - self.started_at >= 3000:
-            self.finished = True
-            self.caught_food_ids = [1, 2]
-            self.hunger_delta = 20
+
+        current_time = pygame.time.get_ticks()
+
+        if (
+            current_time
+            - self.last_spawn_time
+            > self.spawn_interval
+        ):
+
+            self.spawn_food()
+
+            self.last_spawn_time = current_time
+
+            self.spawn_interval = random.randint(
+                500,
+                1500
+            )
+
+        self.update_foods()
+
+    # -----------------
+    # 음식 생성
+    # -----------------
+
+    def spawn_food(self):
+
+        food_data = random.choice(
+            FOOD_LIST
+        )
+
+        sprite = self.food_sprites.get(
+            food_data["sprite"]
+        )
+
+        print(
+            f"[SPAWN] "
+            f"{food_data['name']} "
+            f"sprite={food_data['sprite']}"
+        )
+
+        self.foods.append(
+            {
+                "food_id":
+                    food_data["food_id"],
+
+                "name":
+                    food_data["name"],
+
+                "sprite":
+                    sprite,
+
+                "hunger_value":
+                    food_data["hunger_value"],
+
+                # 화면 전체에서 랜덤 생성
+                "x":
+                    random.randint(
+                        0,
+                        SCREEN_WIDTH - FOOD_SIZE
+                    ),
+
+                "y":
+                    -FOOD_SIZE,
+
+                # 속도 랜덤
+                "speed":
+                    random.randint(
+                        2,
+                        8
+                    )
+            }
+        )
+
+    # -----------------
+    # 음식 이동
+    # -----------------
+
+    def update_foods(self):
+
+        player_rect = pygame.Rect(
+            self.player_x,
+            PLAYER_Y,
+            PLAYER_WIDTH,
+            PLAYER_HEIGHT
+        )
+
+        remove_list = []
+
+        for food in self.foods:
+
+            food["y"] += food["speed"]
+
+            food_rect = pygame.Rect(
+                food["x"],
+                food["y"],
+                FOOD_SIZE,
+                FOOD_SIZE
+            )
+
+            if player_rect.colliderect(
+                food_rect
+            ):
+
+                self.total_hunger_gain += (
+                    food["hunger_value"]
+                )
+
+                self.caught_food_ids.append(
+                    food["food_id"]
+                )
+
+                print(
+                    f"FOOD_CAUGHT : "
+                    f"{food['name']}"
+                )
+
+                remove_list.append(
+                    food
+                )
+
+            elif food["y"] > SCREEN_HEIGHT:
+
+                remove_list.append(
+                    food
+                )
+
+        for food in remove_list:
+
+            if food in self.foods:
+
+                self.foods.remove(
+                    food
+                )
+
+    # -----------------
+    # draw
+    # -----------------
+
+    def draw(self):
+
+        self.screen.fill(
+            (73, 116, 181)
+        )
+
+        self.draw_ui()
+
+        self.draw_foods()
+
+        self.draw_player()
+
+    # -----------------
+    # UI
+    # -----------------
+
+    def draw_ui(self):
+
+        remain = max(
+            0,
+            GAME_TIME
+            - (
+                pygame.time.get_ticks()
+                - self.start_time
+            )
+        )
+
+        sec = remain // 1000
+
+        timer_text = self.font_md.render(
+            f"TIME {sec}",
+            True,
+            (255, 255, 255)
+        )
+
+        self.screen.blit(
+            timer_text,
+            (20, 20)
+        )
+
+        score_text = self.font_md.render(
+            f"SCORE {self.total_hunger_gain}",
+            True,
+            (255, 255, 255)
+        )
+
+        self.screen.blit(
+            score_text,
+            (20,50)
+        )
+
+    # -----------------
+    # 음식 그리기
+    # -----------------
+
+    def draw_foods(self):
+
+        for food in self.foods:
+
+            sprite = food["sprite"]
+
+            if sprite is None:
+
+                print(
+                    "[ERROR] sprite None :",
+                    food["name"]
+                )
+
+                continue
+
+            self.screen.blit(
+                sprite,
+                (
+                    food["x"],
+                    food["y"]
+                )
+            )
+
+    # -----------------
+    # 플레이어
+    # -----------------
+
+    def draw_player(self):
+
+        ticks = (
+            pygame.time.get_ticks()
+            // 250
+        ) % 2
+
+        stage_sprites = self.sprites[
+            self.stage
+        ]
+
+        if self.direction == "LEFT":
+
+            sprite = stage_sprites[
+                "LEFT"
+            ][ticks]
+
+        elif self.direction == "RIGHT":
+
+            sprite = stage_sprites[
+                "RIGHT"
+            ][ticks]
+
+        else:
+
+            sprite = stage_sprites[
+                "FEED"
+            ][ticks]
+
+        if sprite:
+
+            self.screen.blit(
+                sprite,
+                (
+                    self.player_x,
+                    PLAYER_Y
+                )
+            )
+
+    # -----------------
+    # 이동
+    # -----------------
 
     def move_left(self):
-        self.player_x = max(40, self.player_x - 24)
+
+        self.direction = "LEFT"
+
+        self.player_x -= MOVE_SPEED
+
+        # 화면 왼쪽 끝
+        if self.player_x < 0:
+
+            self.player_x = 0
 
     def move_right(self):
-        self.player_x = min(330, self.player_x + 24)
+
+        self.direction = "RIGHT"
+
+        self.player_x += MOVE_SPEED
+
+        # 화면 오른쪽 끝
+        max_x = (
+            SCREEN_WIDTH
+            - PLAYER_WIDTH
+        )
+
+        if self.player_x > max_x:
+
+            self.player_x = max_x
+
+    # -----------------
+    # 종료
+    # -----------------
 
     def is_finished(self):
-        return self.finished
+
+        elapsed = (
+            pygame.time.get_ticks()
+            - self.start_time
+        )
+
+        return elapsed >= GAME_TIME
+
+    # -----------------
+    # 결과
+    # -----------------
 
     def get_result(self):
+
         return {
-            "hunger_delta": self.hunger_delta,
-            "caught_food_ids": self.caught_food_ids,
+
+            "caught_food_ids":
+                self.caught_food_ids,
+
+            "hunger_delta":
+                self.total_hunger_gain
         }
 
-    def handle_click(self, mx, my):
+    # -----------------
+    # 클릭 무시
+    # -----------------
+
+    def handle_click(
+        self,
+        mx,
+        my
+    ):
+
         return None
