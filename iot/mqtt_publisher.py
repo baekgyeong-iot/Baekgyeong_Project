@@ -3,69 +3,52 @@
 import json
 import paho.mqtt.client as mqtt
 
-
 BROKER = "localhost"
 PORT = 1883
 
-
 TOPICS = {
-
-    # 센서
     "LIGHT": "baekgyeong/sensor/light",
-    "TILT": "baekgyeong/sensor/tilt",
-
-    # 먹이 게임
-    "FEED_START": "baekgyeong/game/feed/start",
-    "FEED_CONTROL": "baekgyeong/game/feed/control",
-    "FEED_RESULT": "baekgyeong/game/feed/result",
-
-    # 놀이 게임
-    "PLAY_START": "baekgyeong/game/play/start",
-    "PLAY_RESULT": "baekgyeong/game/play/result",
-
-    # 행동
-    "PET": "baekgyeong/action/pet",
-    "TEXT": "baekgyeong/action/text",
-
-    # 이벤트
-    "EVOLUTION": "baekgyeong/event/evolution",
-    "RUNAWAY": "baekgyeong/event/runaway"
+    "GYRO": "baekgyeong/sensor/gyro",
+    "BUTTON": "baekgyeong/input/button",
+    "LCD_EVENT": "baekgyeong/event/lcd",
+    "ACTION_FEED": "baekgyeong/action/feed",
+    "ACTION_PLAY": "baekgyeong/action/play",
+    "ACTION_PET": "baekgyeong/action/pet",
+    "ACTION_TEXT": "baekgyeong/action/text"
 }
 
-
 client = mqtt.Client()
+
+mqtt_connected = False
 
 
 def connect_mqtt():
 
-    try:
+    global mqtt_connected
 
-        client.connect(BROKER, PORT)
+    if mqtt_connected:
+        return
 
-        print("[MQTT] Connected")
+    client.connect(BROKER, PORT)
+    client.loop_start()
 
-    except Exception as e:
+    mqtt_connected = True
 
-        print("[MQTT ERROR]")
-        print(e)
-
-
-def publish_event(topic, event_data):
-
-    payload = json.dumps(
-        event_data,
-        ensure_ascii=False
-    )
-
-    client.publish(topic, payload)
-
-    print("\n====================")
-    print("[MQTT PUBLISH]")
-    print("TOPIC :", topic)
-    print("PAYLOAD :", payload)
-    print("====================")
+    print("[MQTT] Connected")
 
 
-if __name__ == "__main__":
+def publish_event(topic, payload):
 
     connect_mqtt()
+
+    client.publish(
+        topic,
+        json.dumps(
+            payload,
+            ensure_ascii=False
+        )
+    )
+
+    print(
+        f"[MQTT] Published -> {topic}"
+    )
