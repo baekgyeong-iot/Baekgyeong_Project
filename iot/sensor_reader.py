@@ -14,27 +14,25 @@ from mqtt_publisher import (
 
 def send_light_event():
 
-    light_value = random.randint(0, 300)
+    light_value = random.randint(0,300)
 
-    event_data = {
-
-        "source": "LIGHT_SENSOR",
-
-        "event": "LIGHT_CHANGED",
-
-        "payload": {
-
-            "light_value": light_value,
-
-            "is_dark": light_value < 120
-        }
-    }
+    is_dark = light_value < 100
 
     publish_event(
-        TOPICS["LIGHT"],
-        event_data
-    )
 
+        TOPICS["LIGHT"],
+
+        {
+            "source": "LIGHT_SENSOR",
+
+            "event": "LIGHT_CHANGED",
+
+            "payload": {
+                "light_value": light_value,
+                "is_dark": is_dark
+            }
+        }
+    )
 
 # =========================
 # 흔들기 센서
@@ -44,68 +42,21 @@ def send_shake_event():
 
     shake_power = random.randint(1, 10)
 
-    event_data = {
-
-        "source": "TILT_SENSOR",
-
-        "event": "DEVICE_SHAKEN",
-
-        "payload": {
-
-            "shake_power": shake_power
-        }
-    }
-
-    publish_event(
-        TOPICS["TILT"],
-        event_data
-    )
-
-
-# =========================
-# 먹이 게임 시작
-# =========================
-
-def start_feed_game():
-
     publish_event(
 
-        TOPICS["FEED_START"],
+        TOPICS["GYRO"],
 
         {
-            "event": "FEED_GAME_STARTED"
+            "source": "GYRO",
+
+            "event": "DEVICE_SHAKEN",
+
+            "payload": {
+                "shake_power": shake_power
+            }
         }
     )
-
-
-# =========================
-# 좌우 이동
-# =========================
-
-def move_left():
-
-    publish_event(
-
-        TOPICS["FEED_CONTROL"],
-
-        {
-            "event": "MOVE_LEFT"
-        }
-    )
-
-
-def move_right():
-
-    publish_event(
-
-        TOPICS["FEED_CONTROL"],
-
-        {
-            "event": "MOVE_RIGHT"
-        }
-    )
-
-
+ 
 # =========================
 # 먹이 먹음
 # =========================
@@ -129,10 +80,11 @@ def food_caught():
 
     publish_event(
 
-        TOPICS["FEED_RESULT"],
+        TOPICS["ACTION_FEED"],
 
         {
-
+            "source": "BUTTON",
+            
             "event": "FOOD_CAUGHT",
 
             "payload": {
@@ -145,21 +97,6 @@ def food_caught():
     )
 
 
-# =========================
-# 놀이 게임 시작
-# =========================
-
-def start_play_game():
-
-    publish_event(
-
-        TOPICS["PLAY_START"],
-
-        {
-            "event": "PLAY_GAME_STARTED"
-        }
-    )
-
 
 # =========================
 # LCD 터치
@@ -169,11 +106,14 @@ def pet_detected():
 
     publish_event(
 
-        TOPICS["PET"],
+        TOPICS["ACTION_PET"],
 
         {
+            "source": "TOUCH",
+            
+            "event": "PET_DETECTED",
 
-            "event": "PET_DETECTED"
+            "payload": {}
         }
     )
 
@@ -189,10 +129,11 @@ def text_button_clicked(
 
     publish_event(
 
-        TOPICS["TEXT"],
+        TOPICS["ACTION_TEXT"],
 
         {
-
+            "source": "BUTTON",
+            
             "event": "TEXT_BUTTON_CLICKED",
 
             "payload": {
@@ -205,33 +146,3 @@ def text_button_clicked(
     )
 
 
-# =========================
-# 진화
-# =========================
-
-def evolution_event():
-
-    publish_event(
-
-        TOPICS["EVOLUTION"],
-
-        {
-            "event": "EVOLUTION"
-        }
-    )
-
-
-# =========================
-# 가출
-# =========================
-
-def runaway_event():
-
-    publish_event(
-
-        TOPICS["RUNAWAY"],
-
-        {
-            "event": "RUNAWAY"
-        }
-    )
