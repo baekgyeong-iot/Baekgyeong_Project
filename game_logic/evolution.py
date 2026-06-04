@@ -10,6 +10,8 @@ except ImportError:
     import state  # type: ignore
 
 
+# evolution.py는 성장 단계 변경만 담당한다.
+# 실제 행동 횟수 증가는 logic.py의 feed/play/end_sleep에서 처리한다.
 @dataclass(frozen=True)
 class EvolutionRule:
     from_stage: str
@@ -30,6 +32,7 @@ def get_rule(growth_stage: str | None = None) -> EvolutionRule | None:
 
 
 def can_evolve(date_string: str | None = None) -> bool:
+    """현재 성장 단계의 진화 조건을 만족하는지 확인한다."""
     current = state.baekgyeong_state
     rule = get_rule(current["growth_stage"])
     if rule is None:
@@ -45,6 +48,7 @@ def can_evolve(date_string: str | None = None) -> bool:
 
 
 def check_evolution(trigger: str = "action_performed", date_string: str | None = None) -> dict[str, Any]:
+    """진화 검사 이벤트를 남기고, 조건을 만족하면 evolve()를 실행한다."""
     current_date = date_string or state.today_string()
     current = state.baekgyeong_state
     payload = {
@@ -64,6 +68,7 @@ def check_evolution(trigger: str = "action_performed", date_string: str | None =
 
 
 def evolve(date_string: str | None = None) -> dict[str, Any]:
+    """현재 성장 단계에서 다음 단계로 변경한다."""
     current = state.baekgyeong_state
     rule = get_rule(current["growth_stage"])
     if rule is None:
