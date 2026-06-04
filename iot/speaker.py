@@ -52,51 +52,52 @@ HIGH_FAVOR_DIALOGS = [
 def play_sound(sound_name):
 
     print(
-        f"[SPEAKER] {sound_name}"
+        f"[SPEAKER] PLAY_SOUND -> {sound_name}"
     )
+
+    return sound_name
 
 
 def play_warning_sound():
 
-    play_sound(
+    return play_sound(
         "WARNING"
     )
 
 
 def play_feed_sound():
 
-    play_sound(
+    return play_sound(
         "FEED"
     )
 
 
 def play_play_sound():
 
-    play_sound(
+    return play_sound(
         "PLAY"
     )
 
 
 def play_pet_sound():
 
-    play_sound(
+    return play_sound(
         "PET"
     )
 
 
 def play_evolution_sound():
 
-    play_sound(
+    return play_sound(
         "EVOLUTION"
     )
 
 
 def play_runaway_sound():
 
-    play_sound(
+    return play_sound(
         "RUNAWAY"
     )
-
 
 def speak_random_dialog(
 
@@ -132,7 +133,7 @@ def speak_random_dialog(
             )
 
     print(
-        f"[DIALOG] {dialog}"
+         f"[DIALOG][{stage}][FAVOR={favorability}] {dialog}"
     )
 
     return dialog
@@ -156,7 +157,7 @@ def gift_event():
     )
 
     print(
-        f"[GIFT] {gift}"
+        f"[GIFT EVENT] {gift}"
     )
 
     return gift
