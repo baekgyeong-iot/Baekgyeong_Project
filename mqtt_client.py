@@ -10,9 +10,12 @@ from game_logic.event_handler import handle_event
 from game_logic.logic import get_led_state
 
 
+# 라즈베리파이에서 MQTT 브로커를 따로 쓰면 이 값을 브로커 주소로 바꾸면 된다.
 BROKER = "localhost"
 PORT = 1883
 
+# 센서, LCD, LED가 주고받을 MQTT topic 이름 모음.
+# 팀원이 topic을 맞출 때 이 상수를 기준으로 보면 된다.
 TOPICS = {
     "LIGHT": "baekgyeong/sensor/light",
     "GYRO": "baekgyeong/sensor/gyro",
@@ -28,6 +31,8 @@ TOPICS = {
     "COMMAND": "baekgyeong/command",
 }
 
+# 서버가 구독할 topic 목록.
+# 이 topic으로 들어온 메시지는 _on_message()에서 game_logic 이벤트로 변환된다.
 SUBSCRIBE_TOPICS = [
     TOPICS["LIGHT"],
     TOPICS["GYRO"],
@@ -43,6 +48,8 @@ SUBSCRIBE_TOPICS = [
 
 
 class BaekgyeongMqttClient:
+    """MQTT 메시지와 game_logic 이벤트를 이어주는 브릿지."""
+
     def __init__(
         self,
         broker: str = BROKER,
@@ -56,20 +63,25 @@ class BaekgyeongMqttClient:
         self.client.on_message = self._on_message
 
     def connect(self) -> None:
+        """MQTT 브로커에 연결한다."""
         self.client.connect(self.broker, self.port)
 
     def loop_forever(self) -> None:
+        """MQTT 클라이언트를 단독 프로세스로 계속 실행한다."""
         self.connect()
         self.client.loop_forever()
 
     def loop_start(self) -> None:
+        """다른 서버와 함께 쓸 수 있게 MQTT 루프를 백그라운드로 실행한다."""
         self.connect()
         self.client.loop_start()
 
     def publish_json(self, topic: str, payload: dict[str, Any]) -> None:
+        """dict payload를 JSON 문자열로 변환해서 publish한다."""
         self.client.publish(topic, json.dumps(payload, ensure_ascii=False))
 
     def publish_state_update(self, result_event: dict[str, Any] | None = None) -> None:
+        """상태 변경 후 LCD/UI/IoT가 받을 수 있도록 현재 상태와 LED 상태를 publish한다."""
         payload = {
             "source": "SYSTEM",
             "event": "STATE_UPDATED",
@@ -88,18 +100,21 @@ class BaekgyeongMqttClient:
         )
 
     def dispatch_event(self, event_message: dict[str, Any]) -> dict[str, Any]:
+        """MQTT로 들어온 메시지를 game_logic 이벤트로 처리한다."""
         normalized = normalize_event(event_message)
         result = handle_event(normalized)
         self.publish_state_update(result)
         return result
 
     def _on_connect(self, client, userdata, flags, reason_code, properties=None):
+        """브로커 연결 직후 필요한 topic들을 구독한다."""
         print(f"[MQTT CONNECTED] {reason_code}")
         for topic in SUBSCRIBE_TOPICS:
             client.subscribe(topic)
             print(f"[MQTT SUBSCRIBE] {topic}")
 
     def _on_message(self, client, userdata, message):
+        """구독 중인 topic에서 메시지를 받으면 game_logic으로 넘긴다."""
         try:
             payload = json.loads(message.payload.decode("utf-8"))
         except json.JSONDecodeError:
@@ -113,7 +128,7 @@ class BaekgyeongMqttClient:
         except Exception as exc:
             print("[GAME_LOGIC ERROR]", type(exc).__name__, exc)
 
-    # Methods expected by ui/lcd/scenes/scene_manager.py
+    # ui/lcd/scenes/scene_manager.py가 호출할 수 있도록 맞춰둔 publish 메서드들.
     def publish_feed_button_clicked(self) -> None:
         self.publish_lcd_event("FEED_BUTTON_CLICKED")
 
@@ -172,6 +187,7 @@ class BaekgyeongMqttClient:
 
 
 def normalize_event(event_message: dict[str, Any]) -> dict[str, Any]:
+    """센서/IoT 쪽 이벤트명을 game_logic이 이해하는 이벤트명으로 맞춘다."""
     event = event_message.get("event")
     payload = event_message.get("payload") if isinstance(event_message.get("payload"), dict) else {}
     source = event_message.get("source", "MQTT")

@@ -12,12 +12,16 @@ from game_logic.event_handler import handle_event
 from game_logic.logic import get_led_state
 
 
+# Flask 서버가 담당하는 시간 흐름 단위.
+# 실제 게임에서는 60초마다 배고픔/재미/기력이 1씩 감소한다.
 TICK_INTERVAL_SECONDS = 60
 
 app = Flask(__name__)
 CORS(app)
 
 
+# 현재는 웹 대시보드 표시용 임시 데이터다.
+# 실제 랭킹/선물 저장소가 생기면 DB나 파일 저장 구조로 바꿀 수 있다.
 RANKINGS: dict[str, list[dict[str, Any]]] = {
     "blue_red_flag": [],
     "memory": [],
@@ -28,6 +32,7 @@ INVENTORY: list[dict[str, Any]] = []
 
 
 def apply_startup_progress() -> None:
+    """서버가 꺼져 있던 동안의 시간 경과를 게임 상태에 반영한다."""
     handle_event(
         {
             "source": "SYSTEM",
@@ -40,6 +45,7 @@ def apply_startup_progress() -> None:
 
 
 def time_tick_loop() -> None:
+    """서버 실행 중 주기적으로 TIME_TICK 이벤트를 발생시킨다."""
     while True:
         time.sleep(TICK_INTERVAL_SECONDS)
         handle_event(
@@ -56,23 +62,27 @@ def time_tick_loop() -> None:
 
 
 def start_background_tasks() -> None:
+    """서버 시작 시 필요한 자동 작업들을 등록한다."""
     apply_startup_progress()
     threading.Thread(target=time_tick_loop, daemon=True).start()
 
 
 @app.get("/api/state")
 def get_current_state():
+    """웹 대시보드와 LCD가 현재 백경이 상태를 조회할 때 사용한다."""
     return jsonify(state.get_state())
 
 
 @app.get("/api/logs")
 def get_logs():
+    """최근 이벤트 로그를 조회한다."""
     limit = request.args.get("limit", default=30, type=int)
     return jsonify({"logs": state.get_logs(limit)})
 
 
 @app.get("/api/rankings")
 def get_rankings():
+    """게임 랭킹 조회 API. 현재는 프론트 연결 확인용 임시 응답이다."""
     return jsonify(
         {
             "rankings": RANKINGS,
@@ -83,6 +93,7 @@ def get_rankings():
 
 @app.get("/api/inventory")
 def get_inventory():
+    """선물함 조회 API. 현재는 프론트 연결 확인용 임시 응답이다."""
     return jsonify(
         {
             "gifts": INVENTORY,
@@ -93,11 +104,13 @@ def get_inventory():
 
 @app.get("/api/led")
 def get_led():
+    """현재 상태를 기준으로 LED가 어떤 색이어야 하는지 반환한다."""
     return jsonify(get_led_state())
 
 
 @app.post("/api/event")
 def post_event():
+    """LCD, 웹, IoT 쪽에서 발생한 이벤트를 game_logic으로 전달한다."""
     event_message = request.get_json(silent=True) or {}
     result = handle_event(event_message)
     return jsonify(
@@ -111,6 +124,7 @@ def post_event():
 
 @app.post("/api/reset")
 def reset_baekgyeong():
+    """백경이를 새로 키우는 상태로 초기화한다."""
     payload = request.get_json(silent=True) or {}
     new_state = state.reset_state(payload.get("birth_date"))
     return jsonify(new_state)
