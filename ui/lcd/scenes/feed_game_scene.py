@@ -9,7 +9,7 @@ from data.food_data import FOOD_LIST
 SCREEN_WIDTH = 480
 SCREEN_HEIGHT = 320
 
-PLAYER_Y = 190
+PLAYER_Y = 140
 
 GAME_TIME = 30000
 
@@ -52,6 +52,21 @@ class FeedGameScene:
         self.player_x = (
             SCREEN_WIDTH // 2
             - PLAYER_WIDTH // 2
+        )
+
+        # 터치 버튼
+        self.left_button_rect = pygame.Rect(
+            20,
+            260,
+            200,
+            50
+        )
+
+        self.right_button_rect = pygame.Rect(
+            260,
+            260,
+            200,
+            50
         )
 
         self.direction = "CENTER"
@@ -212,6 +227,61 @@ class FeedGameScene:
                 )
 
     # -----------------
+    # 터치 버튼
+    # ----------------- 
+
+    def draw_touch_buttons(self):
+
+        pygame.draw.rect(
+            self.screen,
+            (70,120,255),
+            self.left_button_rect,
+            border_radius=12
+        )
+
+        pygame.draw.rect(
+            self.screen,
+            (255,255,255),
+            self.left_button_rect,
+            3,
+            border_radius=12
+        )
+
+        pygame.draw.rect(
+            self.screen,
+            (255,255,255),
+            self.right_button_rect,
+            3,
+            border_radius=12
+        )
+
+        left_text = self.font_md.render(
+            "◀ 왼쪽",
+            True,
+            (255,255,255)
+        )
+
+        right_text = self.font_md.render(
+            "오른쪽 ▶",
+            True,
+            (255,255,255)
+        )
+
+        self.screen.blit(
+            left_text,
+            left_text.get_rect(
+                center = self.left_button_rect.center
+            )
+        )
+
+        self.screen.blit(
+            right_text,
+            right_text.get_rect(
+                center = self.right_button_rect.center
+            )
+        )
+
+    # -----------------
     # draw
     # -----------------
 
@@ -226,6 +296,8 @@ class FeedGameScene:
         self.draw_foods()
 
         self.draw_player()
+
+        self.draw_touch_buttons()
 
     # -----------------
     # UI
@@ -404,5 +476,21 @@ class FeedGameScene:
         mx,
         my
     ):
+        
+        if self.left_button_rect.collidepoint(
+            mx,
+            my
+        ):
+            self.move_left()
+
+            return True
+        
+        if self.right_button_rect.collidepoint(
+            mx,
+            my
+        ):
+            self.move_right()
+
+            return True
 
         return None

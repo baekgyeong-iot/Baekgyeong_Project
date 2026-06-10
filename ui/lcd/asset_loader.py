@@ -37,6 +37,16 @@ FOOD_DIR = os.path.join(
     "foods"
 )
 
+FONT_DIR = os.path.join(
+    BASE_DIR,
+    "assets",
+    "fonts"
+)
+
+FONT_FILE = os.path.join(
+    FONT_DIR,
+    "NanumGothicBold.ttf"
+)
 
 # -----------------------------
 # 폰트
@@ -44,44 +54,64 @@ FOOD_DIR = os.path.join(
 
 def load_fonts():
 
-    font_names = [
-        "AppleGothic",
-        "Malgun Gothic",
-        "malgungothic",
-        "NanumGothic",
-        "Noto Sans CJK KR",
-        "Arial Unicode MS",
-    ]
+    print("\n=== FONT LOAD START ===")
 
-    def make_font(size):
+    if os.path.exists(FONT_FILE):
 
-        for name in font_names:
-
-            font = pygame.font.SysFont(
-                name,
-                size,
-                bold=True
-            )
-
-            if font:
-
-                return font
-
-        return pygame.font.Font(
-            None,
-            size
+        print(
+            f"[OK] FONT : {FONT_FILE}"
         )
 
-    font_sm = make_font(13)
-    font_md = make_font(15)
-    font_lg = make_font(18)
+        font_sm = pygame.font.Font(
+            FONT_FILE,
+            13
+        )
+
+        font_md = pygame.font.Font(
+            FONT_FILE,
+            15
+        )
+
+        font_lg = pygame.font.Font(
+            FONT_FILE,
+            18
+        )
+
+    else:
+
+        print(
+            f"[FAIL] FONT NOT FOUND : {FONT_FILE}"
+        )
+
+        print(
+            "[WARN] System Font Fallback"
+        )
+
+        font_sm = pygame.font.SysFont(
+            "malgungothic",
+            13,
+            bold = True
+        )
+
+        font_md = pygame.font.SysFont(
+            "malgungothic",
+            15,
+            bold = True
+        )
+
+        font_lg = pygame.font.SysFont(
+            "malgungothic",
+            18,
+            bold = True
+        )
+
+        print("=== FONT LOAD END ===\n")
 
     return (
         font_sm,
         font_md,
         font_lg
     )
-
 
 # -----------------------------
 # 공용 이미지 로더
@@ -110,7 +140,6 @@ def load_image(path, size=None):
     )
 
     return image
-
 
 # -----------------------------
 # 아이콘
@@ -147,7 +176,6 @@ def load_icons():
 
     return icons
 
-
 # -----------------------------
 # 음식 스프라이트
 # -----------------------------
@@ -180,7 +208,6 @@ def load_food_sprites():
     print("=== FOOD LOAD END ===\n")
 
     return foods
-
 
 # -----------------------------
 # 백경이 스프라이트

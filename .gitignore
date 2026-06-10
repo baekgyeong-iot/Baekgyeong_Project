@@ -2,3 +2,5 @@
 __pycache__/
 *.pyc
 game_logic/baekgyeong_save.json
+.venv/
+venv/

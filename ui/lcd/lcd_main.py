@@ -7,6 +7,7 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 import pygame
+import time
 
 CURRENT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = CURRENT_DIR.parents[1]
@@ -18,7 +19,6 @@ from asset_loader import load_fonts, load_food_sprites, load_icons, load_sprites
 from game_logic import event_handler, state as local_state
 from scenes.scene_manager import SceneManager
 
-
 SCREEN_WIDTH = 480
 SCREEN_HEIGHT = 320
 FPS = 30
@@ -29,6 +29,7 @@ API_BASE_URL = "http://localhost:5050/api"
 class LogicBridge:
     def __init__(self, lcd_state: dict) -> None:
         self.lcd_state = lcd_state
+        self.message_lock_until = 0
 
     def _get_backend_state(self) -> dict | None:
         try:
@@ -44,7 +45,8 @@ class LogicBridge:
             current = local_state.get_state()
 
         self.lcd_state.update(current)
-        self.lcd_state["current_message"] = make_message(current)
+        if time.time() > self.message_lock_until:
+            self.lcd_state["current_message"] = make_message(current)
         return connected
 
     def dispatch(self, event: str, payload: dict | None = None) -> dict:
@@ -118,7 +120,6 @@ class LogicBridge:
     def publish_new_baekgyeong(self) -> None:
         self.dispatch("NEW_BAEKGYEONG_REQUESTED")
 
-
 def make_message(current: dict) -> str:
     if current.get("is_runaway"):
         return "백경이가 가출했습니다."
@@ -131,7 +132,6 @@ def make_message(current: dict) -> str:
     if current.get("fun", 0) <= 20:
         return "심심해요. 같이 놀아요!"
     return "백경이와 즐거운 시간을 보내세요."
-
 
 def main() -> int:
     pygame.init()
@@ -201,7 +201,6 @@ def main() -> int:
 
     pygame.quit()
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())

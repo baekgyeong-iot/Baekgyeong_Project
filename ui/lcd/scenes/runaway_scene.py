@@ -8,11 +8,9 @@ COLOR_POPUP_BG = (255, 255, 255)
 COLOR_POPUP_BORDER = (43, 67, 110)
 
 COLOR_BUTTON = (46, 204, 113)
-COLOR_BUTTON_HOVER = (39, 174, 96)
 
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0, 0, 0)
-
 
 class RunawayScene:
 
@@ -32,6 +30,9 @@ class RunawayScene:
         self.font_sm = font_sm
         self.font_md = font_md
         self.font_lg = font_lg
+
+        self.last_click_time = 0
+        self.click_cooldown = 500
 
         self.restart_button = pygame.Rect(
             145, 250, 190, 46
@@ -131,16 +132,9 @@ class RunawayScene:
             desc2.get_rect(center=(240, 228))
         )
 
-        mouse_pos = pygame.mouse.get_pos()
-
-        button_color = COLOR_BUTTON
-
-        if self.restart_button.collidepoint(mouse_pos):
-            button_color = COLOR_BUTTON_HOVER
-
         pygame.draw.rect(
             self.screen,
-            button_color,
+            COLOR_BUTTON,
             self.restart_button,
             border_radius=8
         )
@@ -162,7 +156,20 @@ class RunawayScene:
 
     def handle_click(self, mx, my):
 
-        if self.restart_button.collidepoint(mx, my):
+        now = pygame.time.get_ticks()
+
+        if (
+            now - self.last_click_time
+            < self.click_cooldown
+        ):
+            return None
+        
+        if self.restart_button.collidepoint(
+            mx,
+            my
+        ):
+            self.last_click_time = now
+
             return "NEW_BAEKGYEONG_REQUESTED"
 
         return None

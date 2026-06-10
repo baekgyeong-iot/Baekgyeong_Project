@@ -12,7 +12,6 @@ COLOR_BLACK = (30, 30, 30)
 COLOR_GRAY = (100, 100, 100)
 
 COLOR_BUTTON = (73, 116, 181)
-COLOR_BUTTON_HOVER = (58, 95, 158)
 
 COLOR_WHITE = (255, 255, 255)
 
@@ -157,21 +156,9 @@ class FeedResultScene:
 
     def draw_button(self):
 
-        mx, my = pygame.mouse.get_pos()
-
-        button_color = COLOR_BUTTON
-
-        if self.confirm_rect.collidepoint(
-            mx,
-            my
-        ):
-            button_color = (
-                COLOR_BUTTON_HOVER
-            )
-
         pygame.draw.rect(
             self.screen,
-            button_color,
+            COLOR_BUTTON,
             self.confirm_rect,
             border_radius=10
         )
@@ -185,7 +172,7 @@ class FeedResultScene:
         self.screen.blit(
             text,
             text.get_rect(
-                center=self.confirm_rect.center
+                center = self.confirm_rect.center
             )
         )
 

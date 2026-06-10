@@ -177,7 +177,7 @@ class SceneManager:
                 )    
 
     # -------------------------
-    # 키보드 입력
+    # 키보드 입력/ 디버깅용
     # -------------------------
 
     def handle_key(
@@ -201,6 +201,23 @@ class SceneManager:
 
                 self.current_scene.move_right()
 
+        elif isinstance(
+            self.current_scene,
+            BlueRedFlagScene
+        ):
+
+            if key == pygame.K_LEFT:
+
+                self.current_scene.handle_button(
+                    "LEFT"
+                )
+
+            elif key == pygame.K_RIGHT:
+
+                self.current_scene.handle_button(
+                    "RIGHT"
+                )            
+
     # -------------------------
     # click
     # -------------------------
@@ -211,7 +228,10 @@ class SceneManager:
         my
     ):
 
-        if not self.current_scene:
+        if not hasattr(
+            self.current_scene,
+            "handle_click"
+        ):
             return None
 
         click_result = (
@@ -615,9 +635,13 @@ class SceneManager:
                 "나랑 같이 게임하자!"
             ]
 
-            self.state["current_message"] = (
-                random.choice(DUMMY_MESSAGES)
-            )
+            msg = random.choice(DUMMY_MESSAGES)
+
+            self.state["current_message"] = msg
+
+            if self.mqtt_client:
+                import time
+                self.mqtt_client.message_lock_until = time.time() + 5
 
             self.go_home()
 
@@ -709,7 +733,6 @@ class SceneManager:
             self.current_scene = PopupScene(
                 self.screen,
                 "선물을 받았습니다",
-                self.sprites,
                 self.font_sm,
                 self.font_md,
                 self.font_lg
