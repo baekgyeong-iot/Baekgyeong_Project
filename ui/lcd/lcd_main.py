@@ -120,6 +120,15 @@ class LogicBridge:
     def publish_new_baekgyeong(self) -> None:
         self.dispatch("NEW_BAEKGYEONG_REQUESTED")
 
+    def publish_led_left(self):
+        self.dispatch("LED_LEFT")
+
+    def publish_led_right(self):
+        self.dispatch("LED_RIGHT")
+
+    def publish_led_off(self):
+        self.dispatch("LED_OFF")
+
 def make_message(current: dict) -> str:
     if current.get("is_runaway"):
         return "백경이가 가출했습니다."
