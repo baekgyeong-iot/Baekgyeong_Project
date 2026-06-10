@@ -4,13 +4,16 @@ import random
 SCREEN_WIDTH = 480
 SCREEN_HEIGHT = 320
 
-COLOR_BG = (73,116,181)
+COLOR_BG = (73, 116, 181)
 
-COLOR_WHITE = (255,255,255)
-COLOR_BLACK = (0,0,0)
+COLOR_WHITE = (255, 255, 255)
+COLOR_BLACK = (0, 0, 0)
 
-COLOR_BLUE = (100,100,255)
-COLOR_RED = (255,100,100)
+COLOR_BLUE = (100, 100, 255)
+COLOR_BLUE_ACTIVE = (60, 60, 220)
+
+COLOR_RED = (255, 100, 100)
+COLOR_RED_ACTIVE = (220, 60, 60)
 
 MAX_ROUND = 5
 
@@ -38,8 +41,25 @@ class MemoryGameScene:
         self.finished = False
 
         self.score = 0
-
         self.round = 1
+
+        # 터치 버튼
+        self.left_button_rect = pygame.Rect(
+            20,
+            250,
+            200,
+            55
+        )
+
+        self.right_button_rect = pygame.Rect(
+            260,
+            250,
+            200,
+            55
+        )
+
+        self.active_button = None
+        self.button_press_time = 0
 
         self.sequence = []
         self.user_inputs = []
@@ -49,12 +69,39 @@ class MemoryGameScene:
         self.sequence_index = 0
 
         self.last_flash = pygame.time.get_ticks()
-
         self.flash_interval = 800
+
+        self.result_message = ""
 
         self.generate_round()
 
     def handle_click(self, mx, my):
+
+        if self.showing_sequence:
+            return None
+        
+        if self.left_button_rect.collidepoint(
+            mx,
+            my
+        ):
+            self.active_button = "LEFT"
+            self.button_press_time = pygame.time.get_ticks()
+
+            self.handle_button("LEFT")
+
+            return True
+        
+        if self.right_button_rect.collidepoint(
+            mx,
+            my
+        ):
+            self.active_button = "RIGHT"
+            self.button_press_time = pygame.time.get_ticks()
+
+            self.handle_button("RIGHT")
+
+            return True
+        
         return None
 
     # -------------------------
@@ -80,6 +127,8 @@ class MemoryGameScene:
 
         self.last_flash = pygame.time.get_ticks()
 
+        self.result_message = ""
+
     # -------------------------
     # Draw
     # -------------------------
@@ -97,6 +146,9 @@ class MemoryGameScene:
         self.draw_character()
 
         self.draw_info()
+
+        if not self.showing_sequence:
+            self.draw_touch_buttons()
 
     # -------------------------
     # Header
@@ -127,6 +179,85 @@ class MemoryGameScene:
         )
 
     # -------------------------
+    # 터치 버튼
+    # -------------------------
+
+    def draw_touch_buttons(self):
+
+        now = pygame.time.get_ticks()
+
+        if now - self.button_press_time > 150:
+            self.active_button = None
+
+        left_color = (
+            COLOR_BLUE_ACTIVE
+            if self.active_button == "LEFT"
+            else COLOR_BLUE
+        )
+
+        right_color = (
+            COLOR_RED_ACTIVE
+            if self.active_button == "RIGHT"
+            else COLOR_RED
+        )
+
+        pygame.draw.rect(
+            self.screen,
+            left_color,
+            self.left_button_rect,
+            border_radius = 12
+        )
+
+        pygame.draw.rect(
+            self.screen,
+            right_color,
+            self.right_button_rect,
+            border_radius = 12
+        )
+
+        pygame.draw.rect(
+            self.screen,
+            COLOR_WHITE,
+            self.left_button_rect,
+            3,
+            border_radius = 12
+        )
+
+        pygame.draw.rect(
+            self.screen,
+            COLOR_WHITE,
+            self.right_button_rect,
+            3,
+            border_radius = 12
+        )
+
+        left_text = self.font_md.render(
+            "◀ 왼쪽",
+            True,
+            COLOR_WHITE
+        )
+
+        right_text = self.font_md.render(
+            "오른쪽 ▶",
+            True,
+            COLOR_WHITE
+        )
+
+        self.screen.blit(
+            left_text,
+            left_text.get_rect(
+                center = self.left_button_rect.center
+            )
+        )
+
+        self.screen.blit(
+            right_text,
+            right_text.get_rect(
+                center = self.right_button_rect.center
+            )
+        )
+
+    # -------------------------
     # LED 표시
     # -------------------------
 
@@ -141,14 +272,12 @@ class MemoryGameScene:
 
             if (
                 now - self.last_flash
-                <
-                400
+                < 400
             ):
 
                 if (
                     self.sequence_index
-                    <
-                    len(self.sequence)
+                    < len(self.sequence)
                 ):
 
                     current = (
@@ -210,7 +339,7 @@ class MemoryGameScene:
 
         self.screen.blit(
             sprite,
-            (185,160)
+            (185,130)
         )
 
     # -------------------------
@@ -237,8 +366,7 @@ class MemoryGameScene:
             text,
             (
                 SCREEN_WIDTH//2
-                -
-                text.get_width()//2,
+                - text.get_width()//2,
                 280
             )
         )
@@ -256,8 +384,7 @@ class MemoryGameScene:
 
         if (
             now - self.last_flash
-            >
-            self.flash_interval
+            > self.flash_interval
         ):
 
             self.sequence_index += 1
@@ -266,8 +393,7 @@ class MemoryGameScene:
 
             if (
                 self.sequence_index
-                >=
-                len(self.sequence)
+                >= len(self.sequence)
             ):
 
                 self.showing_sequence = False
@@ -295,8 +421,7 @@ class MemoryGameScene:
         if (
 
             self.sequence[idx]
-            !=
-            direction
+            != direction
 
         ):
 
@@ -308,8 +433,7 @@ class MemoryGameScene:
         if (
 
             len(self.user_inputs)
-            ==
-            len(self.sequence)
+            == len(self.sequence)
 
         ):
 

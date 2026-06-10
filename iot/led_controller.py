@@ -56,7 +56,7 @@ def update_status_leds(state):
 
     print("\n===== LED STATUS =====")
 
-        print(
+    print(
         f"HUNGER ({state['hunger']}) -> "
         f"{led_state['hunger']}"
     )

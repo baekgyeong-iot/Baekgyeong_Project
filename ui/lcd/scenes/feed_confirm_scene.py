@@ -10,10 +10,7 @@ COLOR_POPUP_BORDER = (73, 116, 181)
 COLOR_SHADOW = (180, 190, 210)
 
 COLOR_GREEN = (52, 199, 89)
-COLOR_GREEN_HOVER = (40, 170, 72)
-
 COLOR_RED = (255, 95, 86)
-COLOR_RED_HOVER = (230, 70, 60)
 
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (30, 30, 30)
@@ -50,6 +47,7 @@ class FeedConfirmScene:
             190
         )
 
+        # 버튼(터치) 영역
         self.confirm_button = pygame.Rect(
             125,
             185,
@@ -160,38 +158,21 @@ class FeedConfirmScene:
         )
 
     # --------------------------
-    # Buttons
+    # Buttons (LCD 터치 UI)
     # --------------------------
 
     def draw_buttons(self):
 
-        mx, my = pygame.mouse.get_pos()
-
-        start_color = COLOR_GREEN
-        cancel_color = COLOR_RED
-
-        if self.confirm_button.collidepoint(
-            mx,
-            my
-        ):
-            start_color = COLOR_GREEN_HOVER
-
-        if self.cancel_button.collidepoint(
-            mx,
-            my
-        ):
-            cancel_color = COLOR_RED_HOVER
-
         pygame.draw.rect(
             self.screen,
-            start_color,
+            COLOR_GREEN,
             self.confirm_button,
             border_radius=10
         )
 
         pygame.draw.rect(
             self.screen,
-            cancel_color,
+            COLOR_RED,
             self.cancel_button,
             border_radius=10
         )
@@ -223,25 +204,15 @@ class FeedConfirmScene:
         )
 
     # --------------------------
-    # Click
+    # Touch Input Handler
     # --------------------------
 
-    def handle_click(
-        self,
-        mx,
-        my
-    ):
+    def handle_click(self, mx, my):
 
-        if self.confirm_button.collidepoint(
-            mx,
-            my
-        ):
+        if self.confirm_button.collidepoint(mx, my):
             return "FEED_CONFIRMED"
-
-        if self.cancel_button.collidepoint(
-            mx,
-            my
-        ):
+        
+        if self.cancel_button.collidepoint(mx, my):
             return "FEED_CANCELLED"
-
+        
         return None

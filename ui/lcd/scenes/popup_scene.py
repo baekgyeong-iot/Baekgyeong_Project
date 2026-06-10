@@ -36,6 +36,9 @@ class PopupScene:
         self.popup_type = popup_type
         self.evolution_sprite = evolution_sprite
 
+        self.last_click_time = 0
+        self.click_cooldown = 300
+
         self.font_sm = font_sm or pygame.font.SysFont(
             "malgungothic",
             16,
@@ -252,15 +255,21 @@ class PopupScene:
         mx,
         my
     ):
+        now = pygame.time.get_ticks()
+
+        if (
+            now - self.last_click_time
+            < self.click_cooldown
+        ):
+            return None
 
         if self.ok_button.collidepoint(
             mx,
             my
         ):
+            self.last_click_time = now
 
-            self.button_pressed_time = (
-                pygame.time.get_ticks()
-            )
+            self.button_pressed_time = now
 
             if self.popup_type == "evolution":
 

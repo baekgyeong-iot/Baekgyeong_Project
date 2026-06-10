@@ -17,6 +17,9 @@ COLOR_WHITE = (255, 255, 255)
 COLOR_BLUE = (100, 100, 255)
 COLOR_RED = (255, 100, 100)
 
+COLOR_BTN_BORDER = (255,255,255)
+COLOR_BTN_TEXT = (255,255,255)
+
 
 class BlueRedFlagScene:
 
@@ -62,6 +65,24 @@ class BlueRedFlagScene:
             random.choice(
                 ["LEFT", "RIGHT"]
             )
+        )
+
+    # --------------------------------
+    # 터치 버튼 영역
+    # --------------------------------
+
+        self.left_button_rect = pygame.Rect(
+            20,
+            250,
+            180,
+            50
+        )
+
+        self.right_button_rect = pygame.Rect(
+            280,
+            250,
+            180,
+            50
         )
 
         self.send_led()
@@ -150,6 +171,8 @@ class BlueRedFlagScene:
         self.draw_led()
 
         self.draw_character()
+
+        self.draw_touch_buttons()
 
     # --------------------------------
     # Header
@@ -297,7 +320,97 @@ class BlueRedFlagScene:
             )
 
     # --------------------------------
-    # MQTT BUTTON
+    # 터치 버튼 UI
+    # --------------------------------
+
+    def draw_touch_buttons(self):
+
+        pygame.draw.rect(
+            self.screen,
+            COLOR_BLUE,
+            self.left_button_rect,
+            border_radius = 12
+        )
+
+        pygame.draw.rect(
+            self.screen,
+            COLOR_BTN_BORDER,
+            self.left_button_rect,
+            3,
+            border_radius= 12
+        )
+
+        pygame.draw.rect(
+            self.screen,
+            COLOR_RED,
+            self.right_button_rect,
+            border_radius = 12
+        )
+
+        pygame.draw.rect(
+            self.screen,
+            COLOR_BTN_BORDER,
+            self.right_button_rect,
+            3,
+            border_radius= 12
+        )
+
+        left_text = self.font_md.render(
+            "왼쪽",
+            True,
+            COLOR_BTN_TEXT
+        )
+
+        right_text = self.font_md.render(
+            "오른쪽",
+            True,
+            COLOR_BTN_TEXT
+        )
+
+        self.screen.blit(
+            left_text,
+            left_text.get_rect(
+                center = self.left_button_rect.center
+            )
+        )
+
+        self.screen.blit(
+            right_text,
+            right_text.get_rect(
+                center = self.right_button_rect.center
+            )
+        )
+
+    # --------------------------------
+    # 터치 입력
+    # --------------------------------
+
+    def handle_click(
+            self,
+            mx,
+            my
+    ):
+        
+        if self.left_button_rect.collidepoint(
+            mx,
+            my
+        ):
+            self.handle_button("LEFT")
+
+            return True
+        
+        if self.right_button_rect.collidepoint(
+            mx,
+            my
+        ):
+            self.handle_button("RIGHT")
+
+            return True
+        
+        return None
+
+    # --------------------------------
+    # 입력 처리 
     # --------------------------------
 
     def handle_button(

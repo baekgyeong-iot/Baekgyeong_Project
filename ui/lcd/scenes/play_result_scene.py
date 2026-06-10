@@ -9,13 +9,13 @@ COLOR_PANEL = (255, 255, 255)
 COLOR_BORDER = (73, 116, 181)
 
 COLOR_BUTTON = (73, 116, 181)
-COLOR_BUTTON_HOVER = (58, 95, 158)
 
 COLOR_WHITE = (255, 255, 255)
 
 COLOR_BLACK = (30, 30, 30)
 COLOR_GRAY = (120, 120, 120)
 
+CLICK_DEBOUNCE_MS = 400
 
 class PlayResultScene:
 
@@ -54,6 +54,8 @@ class PlayResultScene:
             "memory": "암기 게임",
             "red_light_green_light": "무궁화 꽃이 피었습니다"
         }
+
+        self.last_click_time = 0
 
     # --------------------------------
     # Draw
@@ -183,16 +185,9 @@ class PlayResultScene:
 
     def draw_button(self):
 
-        mx, my = pygame.mouse.get_pos()
-
-        button_color = COLOR_BUTTON
-
-        if self.ok_button.collidepoint(mx, my):
-            button_color = COLOR_BUTTON_HOVER
-
         pygame.draw.rect(
             self.screen,
-            button_color,
+            COLOR_BUTTON,
             self.ok_button,
             border_radius=10
         )
@@ -219,11 +214,16 @@ class PlayResultScene:
         mx,
         my
     ):
+        now = pygame.time.get_ticks()
+
+        if now - self.last_click_time < CLICK_DEBOUNCE_MS:
+            return None
 
         if self.ok_button.collidepoint(
             mx,
             my
         ):
+            self.last_click_time = now
             return "PLAY_RESULT_CLOSE"
 
         return None

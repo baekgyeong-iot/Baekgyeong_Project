@@ -63,8 +63,10 @@ class PlayGameSelectScene:
         self.font_lg = font_lg
 
         self.selected_idx = None
-
         self.button_pressed_time = 0
+
+        self.last_click_time = 0
+        self.input_lock_time = 350
 
         self.blue_red_button = pygame.Rect(
             90,
@@ -141,8 +143,7 @@ class PlayGameSelectScene:
         now = pygame.time.get_ticks()
 
         if (
-            now -
-            self.button_pressed_time
+            now - self.button_pressed_time
             > 200
         ):
             self.selected_idx = None
@@ -179,7 +180,7 @@ class PlayGameSelectScene:
             self.screen.blit(
                 text,
                 text.get_rect(
-                    center=rect.center
+                    center = rect.center
                 )
             )
 
@@ -192,6 +193,10 @@ class PlayGameSelectScene:
         mx,
         my
     ):
+        now = pygame.time.get_ticks()
+
+        if now - self.last_click_time < self.input_lock_time:
+            return None
 
         if self.blue_red_button.collidepoint(
             mx,
@@ -199,10 +204,8 @@ class PlayGameSelectScene:
         ):
 
             self.selected_idx = 0
-
-            self.button_pressed_time = (
-                pygame.time.get_ticks()
-            )
+            self.button_pressed_time = now
+            self.last_click_time = now
 
             return {
                 "event": "PLAY_GAME_SELECTED",
@@ -218,10 +221,8 @@ class PlayGameSelectScene:
         ):
 
             self.selected_idx = 1
-
-            self.button_pressed_time = (
-                pygame.time.get_ticks()
-            )
+            self.button_pressed_time = now
+            self.last_click_time = now
 
             return {
                 "event": "PLAY_GAME_SELECTED",
@@ -237,10 +238,8 @@ class PlayGameSelectScene:
         ):
 
             self.selected_idx = 2
-
-            self.button_pressed_time = (
-                pygame.time.get_ticks()
-            )
+            self.button_pressed_time = now
+            self.last_click_time = now
 
             return {
                 "event": "PLAY_GAME_SELECTED",
