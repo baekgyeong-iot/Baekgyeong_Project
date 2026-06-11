@@ -62,6 +62,7 @@ def _initial_state(birth_date: str | None = None) -> dict[str, Any]:
         "sleep_count": 0,
         "runaway_ready_date": None,
         "is_runaway": False,
+        "game_led": "OFF",
         "last_tick_at": now_string(),
         "last_saved_at": now_string(),
     }

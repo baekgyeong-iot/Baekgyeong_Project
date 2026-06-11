@@ -74,7 +74,25 @@ def get_led_state() -> dict[str, str]:
         "hunger_led": led_color(current["hunger"]),
         "energy_led": led_color(current["energy"]),
         "fun_led": led_color(current["fun"]),
+        "game_led": current.get("game_led", "OFF"),
     }
+
+
+def set_game_led(direction: str) -> dict[str, Any]:
+    """청기백기 같은 미니게임에서 쓰는 좌/우 LED 상태를 기록한다."""
+    normalized = direction.upper()
+    if normalized not in {"LEFT", "RIGHT", "OFF"}:
+        normalized = "OFF"
+
+    state.baekgyeong_state["game_led"] = normalized
+    return state.add_log(
+        f"LED_{normalized}",
+        {
+            "game_led": normalized,
+            "led": get_led_state(),
+        },
+        source="SYSTEM",
+    )
 
 
 def decay_stats(hunger_delta: int = -1, fun_delta: int = -1, energy_delta: int = -1) -> dict[str, Any]:

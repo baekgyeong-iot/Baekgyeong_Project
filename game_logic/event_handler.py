@@ -88,6 +88,16 @@ def handle_event(event_message: dict[str, Any]) -> dict[str, Any]:
     if event_name == "STROKE_ATTEMPT":
         return logic.stroke(date_string=payload.get("date"))
 
+    # 청기백기 게임에서 외부 LED를 왼쪽/오른쪽/꺼짐으로 제어하기 위한 이벤트다.
+    if event_name == "LED_LEFT":
+        return logic.set_game_led("LEFT")
+
+    if event_name == "LED_RIGHT":
+        return logic.set_game_led("RIGHT")
+
+    if event_name == "LED_OFF":
+        return logic.set_game_led("OFF")
+
     if event_name == "EVO_CHECK":
         return evolution.check_evolution(
             trigger=str(payload.get("trigger", "manual")),
