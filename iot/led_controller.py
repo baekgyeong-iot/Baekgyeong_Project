@@ -1,5 +1,20 @@
 # led_controller.py
 
+from gpio_config import (
+
+    HUNGER_R_PIN,
+    HUNGER_G_PIN,
+    HUNGER_B_PIN,
+
+    ENERGY_R_PIN,
+    ENERGY_G_PIN,
+    ENERGY_B_PIN,
+
+    FUN_R_PIN,
+    FUN_G_PIN,
+    FUN_B_PIN
+)
+
 WARNING_THRESHOLD = 10
 RED_THRESHOLD = 30
 YELLOW_THRESHOLD = 50
@@ -22,6 +37,28 @@ def get_led_color(value):
     else:
 
         return "GREEN"
+
+def get_rgb_output(color):
+
+    if color == "GREEN":
+
+        return (0, 1, 0)
+
+    elif color == "YELLOW":
+
+        return (1, 1, 0)
+
+    elif color == "RED":
+
+        return (1, 0, 0)
+
+    elif color == "BLINK_RED":
+
+        return (1, 0, 0)
+
+    return (0, 0, 0)
+
+
 
 
 def get_led_status(state):
