@@ -11,6 +11,14 @@ from game_logic import state
 from game_logic.event_handler import handle_event
 from game_logic.logic import get_led_state
 
+try:
+    from mqtt_client import BaekgyeongMqttClient
+except Exception as exc:  # MQTT 의존성이 없어도 Flask 서버는 실행되어야 한다.
+    BaekgyeongMqttClient = None  # type: ignore[assignment]
+    MQTT_IMPORT_ERROR = exc
+else:
+    MQTT_IMPORT_ERROR = None
+
 
 # Flask 서버가 담당하는 시간 흐름 단위.
 # 실제 게임에서는 60초마다 배고픔/재미/기력이 1씩 감소한다.
@@ -29,6 +37,7 @@ RANKINGS: dict[str, list[dict[str, Any]]] = {
 }
 
 INVENTORY: list[dict[str, Any]] = []
+MQTT_BRIDGE = None
 
 
 def apply_startup_progress() -> None:
@@ -65,6 +74,24 @@ def start_background_tasks() -> None:
     """서버 시작 시 필요한 자동 작업들을 등록한다."""
     apply_startup_progress()
     threading.Thread(target=time_tick_loop, daemon=True).start()
+    start_mqtt_bridge()
+
+
+def start_mqtt_bridge() -> None:
+    """MQTT 메시지도 Flask와 같은 game_logic 상태에서 처리되도록 브릿지를 켠다."""
+    global MQTT_BRIDGE
+
+    if BaekgyeongMqttClient is None:
+        print("[MQTT DISABLED]", MQTT_IMPORT_ERROR)
+        return
+
+    try:
+        MQTT_BRIDGE = BaekgyeongMqttClient(client_id="baekgyeong-flask-server")
+        MQTT_BRIDGE.loop_start()
+        print("[MQTT BRIDGE STARTED]")
+    except Exception as exc:
+        MQTT_BRIDGE = None
+        print("[MQTT BRIDGE DISABLED]", type(exc).__name__, exc)
 
 
 @app.get("/api/state")

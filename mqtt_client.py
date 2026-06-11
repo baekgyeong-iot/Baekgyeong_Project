@@ -46,6 +46,8 @@ SUBSCRIBE_TOPICS = [
     TOPICS["COMMAND"],
 ]
 
+LED_COMMAND_EVENTS = {"LED_LEFT", "LED_RIGHT", "LED_OFF"}
+
 
 class BaekgyeongMqttClient:
     """MQTT 메시지와 game_logic 이벤트를 이어주는 브릿지."""
@@ -90,11 +92,15 @@ class BaekgyeongMqttClient:
         if result_event is not None:
             payload["result_event"] = result_event
         self.publish_json(TOPICS["STATE_UPDATE"], payload)
+        led_event = "LED_UPDATE"
+        if result_event and result_event.get("event") in LED_COMMAND_EVENTS:
+            led_event = str(result_event["event"])
+
         self.publish_json(
             TOPICS["LED_CONTROL"],
             {
                 "source": "SYSTEM",
-                "event": "LED_UPDATE",
+                "event": led_event,
                 "payload": get_led_state(),
             },
         )
@@ -174,6 +180,15 @@ class BaekgyeongMqttClient:
 
     def publish_new_baekgyeong(self) -> None:
         self.publish_lcd_event("NEW_BAEKGYEONG_REQUESTED")
+
+    def publish_led_left(self) -> None:
+        self.publish_lcd_event("LED_LEFT")
+
+    def publish_led_right(self) -> None:
+        self.publish_lcd_event("LED_RIGHT")
+
+    def publish_led_off(self) -> None:
+        self.publish_lcd_event("LED_OFF")
 
     def publish_lcd_event(self, event: str, payload: dict[str, Any] | None = None) -> None:
         self.publish_json(
