@@ -16,7 +16,8 @@ class GiftScene:
         state,
         sprites,
         font_md,
-        font_lg
+        font_lg,
+        gift_name = "알 수 없는 선물"
     ):
 
         self.screen = screen
@@ -25,14 +26,19 @@ class GiftScene:
 
         self.font_md = font_md
         self.font_lg = font_lg
+        
+        self.gift_name = gift_name
 
         self.start_time = pygame.time.get_ticks()
 
-        self.duration = 2500
+        self.duration = 3000
 
     def update(self):
 
-        pass
+        self.elapsed = (
+            pygame.time.get_ticks()
+            - self.start_time
+        )
 
     def is_finished(self):
 
@@ -59,6 +65,19 @@ class GiftScene:
             )
         )
 
+        gift_text = self.font_md.render(
+            self.gift_name,
+            True,
+            WHITE
+        )
+
+        self.screen.blit(
+            gift_text,
+            gift_text.get_rect(
+                center=(240,260)
+            )
+        )
+
         self.draw_gift_sprite()
 
         self.draw_sparkles()
@@ -73,7 +92,7 @@ class GiftScene:
         sprite = (
             self.sprites
             .get(stage,{})
-            .get("GIFT")
+            .get("PRESENT")
         )
 
         if sprite is None:
@@ -84,18 +103,22 @@ class GiftScene:
             - self.start_time
         )
 
-        shake_x = int(
+        float_y = int(
             math.sin(
-                elapsed * 0.04
-            ) * 8
+                elapsed * 0.003
+            ) * 4
+        )
+
+        rect = sprite.get_rect(
+        center=(
+                SCREEN_WIDTH // 2,
+                145 + float_y
+            )
         )
 
         self.screen.blit(
             sprite,
-            (
-                180 + shake_x,
-                90
-            )
+            rect
         )
 
     def draw_sparkles(self):
@@ -104,14 +127,16 @@ class GiftScene:
 
         for i in range(6):
 
-            x = 180 + i*25
+            center_x = SCREEN_WIDTH // 2 - 60
+
+            x = center_x + i * 20
 
             y = (
-                70
+                75
                 + int(
                     math.sin(
-                        t*0.01+i
-                    ) * 10
+                        t*0.003 + i * 0.7
+                    ) * 3
                 )
             )
 

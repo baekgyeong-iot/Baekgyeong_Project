@@ -20,6 +20,84 @@ from scenes.popup_scene import PopupScene
 from scenes.runaway_scene import RunawayScene
 from scenes.gift_scene import GiftScene
 
+message_table = {
+    "BABY": {
+        "0_20": [
+            "어색해...",
+            "놀아줘..."
+        ],
+        "21_40": [
+            "오늘은 기분이 좋아!",
+            "같이 있어줘서 고마워!"
+        ],
+        "41_60": [
+            "오늘도 즐거워!",
+            "너랑 노는 게 좋아!"
+        ],
+        "61_80": [
+            "항상 고마워!",
+            "너를 보면 힘이 나!"
+        ],
+        "81_100": [
+            "제일 좋아해!",
+            "항상 함께하고 싶어!"
+        ]
+
+    },
+
+    "CHILD": {
+        "0_20": [
+            "아직 조금 어색해.",
+            "무슨 말을 해야 할까?"
+        ],
+        "21_40": [
+            "오늘도 왔네!",
+            "반가워!"
+        ],
+        "41_60": [
+            "같이 놀자!",
+            "오늘은 뭐 할까?"
+        ],
+        "61_80": [
+            "너랑 있으면 재밌어!",
+            "기다리고 있었어!"
+        ],
+        "81_100": [
+            "네가 최고야!",
+            "정말 좋아해!"
+        ]
+    },
+
+    "ADULT": {
+        "0_20": [
+            "아직은 너가 어려워.",
+            "천천히 친해지자."
+        ],
+        "21_40": [
+            "오늘도 와줘서 고마워.",
+            "네가 오면 기분이 좋아"
+        ],
+        "41_60": [
+            "오늘 하루는 어땠어?",
+            "같이 이야기하자."
+        ],
+        "61_80": [
+            "널 보면 힘이 나.",
+            "오늘도 반가워"
+        ],
+        "81_100": [
+            "항상 함께해줘서 고마워.",
+            "너는 정말 소중한 존재야."
+        ]
+    }
+}
+
+gift_table = {
+    1: "작은 조개껍데기",
+    2: "반짝이는 돌",
+    3: "바다 유리"
+}
+
 class SceneManager:
 
     def __init__(
@@ -100,9 +178,11 @@ class SceneManager:
 
                 self.feed_result = result
 
-                hunger_delta = (
+                raw_hunger_delta = (
                     result["hunger_delta"]
                 )
+
+                hunger_delta = result["hunger_delta"]
 
                 self.state["hunger"] = min(
                     100,
@@ -271,6 +351,26 @@ class SceneManager:
             )
 
         return event_name
+    
+    # =====================
+    # 호감도 구간 계산
+    # =====================
+
+    def get_favorability_range(self, favorability):
+
+        if favorability <= 20:
+            return "0_20"
+        
+        elif favorability <= 40:
+            return "21_40"
+        
+        elif favorability <= 60:
+            return "41_60"
+        
+        elif favorability <= 80:
+            return "61_80"
+        
+        return "81_100"
     
     # -------------------------
     # MQTT Publish
@@ -614,7 +714,7 @@ class SceneManager:
 
         elif event_name == "PLAY_RESULT_CLOSE":
             
-            self.go_home()
+            self.go_home()  
 
         # =====================
         # 대화
@@ -624,43 +724,40 @@ class SceneManager:
 
             print("대화 화면")
 
-            DUMMY_MESSAGES = [
-                "안녕!",
-                "오늘도 반가워!",
-                "배고파...",
-                "같이 놀자!",
-                "쓰다듬어줘!",
-                "오늘 기분이 좋아!",
-                "졸려...",
-                "나랑 같이 게임하자!"
-            ]
+            growth_stage = self.state.get(
+                "growth_stage",
+                "BABY"
+            )
 
-            msg = random.choice(DUMMY_MESSAGES)
+            favorability = self.state.get(
+                "favorability",
+                0
+            )
 
-            self.state["current_message"] = msg
+            favorability_range = (
+                self.get_favorability_range(
+                    favorability
+                )
+            )
+
+            message = (
+                message_table
+                .get(growth_stage, {})
+                .get(favorability_range, [])
+            )
+
+            if not message:
+                selected_message = "..."
+            else:
+                selected_message = random.choice(message)
+            
+            self.state["current_message"] = selected_message
 
             if self.mqtt_client:
                 import time
                 self.mqtt_client.message_lock_until = time.time() + 5
 
             self.go_home()
-
-        elif event_name == "MESSAGE_SELECTED":
-
-            message = payload.get(
-                "message",
-                ""
-            )
-
-            self.state["current_message"] = message
-
-            self.current_scene = PopupScene(
-                self.screen,
-                message,
-                self.font_sm,
-                self.font_md,
-                self.font_lg
-            )
 
         elif event_name == "POPUP_CLOSE":
 
@@ -730,12 +827,20 @@ class SceneManager:
 
         elif event_name == "GIFT_EVENT_TRIGGERED":
 
-            self.current_scene = PopupScene(
+            gift_id = payload.get("gift_id")
+
+            gift_name = gift_table.get(
+                gift_id,
+                "알 수 없는 선물"
+            )
+
+            self.current_scene = GiftScene(
                 self.screen,
-                "선물을 받았습니다",
-                self.font_sm,
+                self.state,
+                self.sprites,
                 self.font_md,
-                self.font_lg
+                self.font_lg,
+                gift_name
             )
 
             print(
@@ -815,9 +920,11 @@ class SceneManager:
 
         elif event_name == "RUNAWAY_EVENT_TRIGGERED":
 
-            self.state["is_runaway"] = payload.get(
-                "is_runaway",
-                True
+            self.state["is_runaway"] = True
+
+            self.state["runaway_reason"] = payload.get(
+                "reason",
+                ""
             )
 
             self.current_scene = RunawayScene(
@@ -836,6 +943,8 @@ class SceneManager:
         elif event_name == "NEW_BAEKGYEONG_REQUESTED":
 
             print("[NEW BAEKGYEONG REQUEST SENT]")
+
+            self.go_home()
 
     # -------------------------
     # Home

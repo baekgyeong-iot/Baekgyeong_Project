@@ -1,5 +1,3 @@
-# scenes/popup_scene.py
-
 import pygame
 
 SCREEN_WIDTH = 480
@@ -15,7 +13,6 @@ COLOR_BUTTON_ACTIVE = (55, 90, 150)
 
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0, 0, 0)
-
 
 class PopupScene:
 
