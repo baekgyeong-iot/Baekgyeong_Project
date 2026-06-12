@@ -43,6 +43,7 @@ class RunawayScene:
     # ----------------------------------
 
     def draw(self):
+        
         self.screen.fill(COLOR_BG)
         self.draw_character()
         self.draw_popup()
@@ -170,7 +171,10 @@ class RunawayScene:
         ):
             self.last_click_time = now
 
-            return "NEW_BAEKGYEONG_REQUESTED"
+            return {
+                "event": "NEW_BAEKGYEONG_REQUESTED",
+                "payload": {}
+            }
 
         return None
 

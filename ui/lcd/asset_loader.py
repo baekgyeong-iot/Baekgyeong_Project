@@ -105,7 +105,7 @@ def load_fonts():
             bold = True
         )
 
-        print("=== FONT LOAD END ===\n")
+    print("=== FONT LOAD END ===\n")
 
     return (
         font_sm,

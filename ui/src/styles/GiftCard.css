@@ -30,6 +30,29 @@
         scale(1.03);
 }
 
+.gift-image {
+
+    width:90px;
+    height:90px;
+
+    object-fit:contain;
+}
+
+.gift-description {
+
+    margin-top:8px;
+
+    text-align:center;
+
+    font-size:14px;
+
+    color:#6f7c93;
+
+    padding:0 10px;
+
+    min-height:40px;
+}
+
 .gift-icon {
 
     font-size:64px;

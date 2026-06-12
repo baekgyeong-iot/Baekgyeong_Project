@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
+from scenes.runaway_scene import RunawayScene
 
 import pygame
 import time
@@ -167,6 +168,14 @@ def main() -> int:
         font_md,
         font_lg,
     )
+
+    if lcd_state.get("is_runaway"):
+        scene_manager.change_scene(
+            "RUNAWAY_EVENT_TRIGGERED",
+            {
+                "is_runaway": True
+            }
+        )
     scene_manager.mqtt_client = bridge
 
     last_tick = pygame.time.get_ticks()
@@ -180,9 +189,31 @@ def main() -> int:
             backend_connected = bridge.sync_state()
             last_sync = now
 
+        if (
+            lcd_state.get("is_runaway")
+            and
+            not isinstance(
+                scene_manager.current_scene,
+                RunawayScene
+            )
+        ):
+            scene_manager.change_scene(
+                "RUNAWAY_EVENT_TRIGGERED"
+            )
+        
+        elif (
+            not lcd_state.get("is_runaway")
+            and
+            isinstance(
+                scene_manager.current_scene,
+                RunawayScene
+            )
+        ):
+            scene_manager.go_home()
+
         if not backend_connected and now - last_tick >= TICK_MS:
             bridge.dispatch("TIME_TICK")
-            last_tick = now
+            last_tick += TICK_MS
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

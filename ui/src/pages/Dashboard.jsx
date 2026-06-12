@@ -52,6 +52,12 @@ export default function Dashboard() {
     const [rankingOpen, setRankingOpen] =
         useState(false);
 
+    const [toastOpen, setToastOpen] =
+        useState(false);
+
+    const [newGiftName, setNewGiftName] =
+        useState("");
+
     /*
     ---------------------------------
     랭킹 조회
@@ -95,13 +101,50 @@ export default function Dashboard() {
             const data =
                 await getInventory();
 
-            setGifts(
-                data.gifts || []
-            );
+            const giftList = 
+                data.gifts || [];
+            
+            setGifts(giftList);
 
             setInventoryNotice(
                 data.notice || ""
             );
+
+            const newestGift =
+                giftList.find(
+                    gift => {
+
+                        if (!gift.is_new) {
+                            return false;
+                        }
+
+                        const viewedkey = 
+                            `gift_${gift.gift_id}_${gift.count}`; 
+
+                        return !localStorage.getItem(
+                            viewedkey
+                        );
+                    }
+                );
+            
+            if (newestGift) {
+
+                setNewGiftName(
+                    newestGift.name
+                );
+
+                setToastOpen(true);
+
+                localStorage.setItem(
+                    `gift_${newestGift.gift_id}_${newestGift.count}`,
+                    "viewed"
+                );
+
+                setTimeout(() => {
+                    
+                    setToastOpen(false);
+                }, 5000);
+            }
 
         } catch (err) {
 
@@ -157,74 +200,100 @@ export default function Dashboard() {
 
     return (
 
-        <div
-            className={
-                stateData?.isSleeping
-                    ? "dashboard night"
-                    : "dashboard day"
-            }
-        >
+        <>
 
-            <header className="header">
+            <div
+                className={
+                    stateData?.isSleeping
+                        ? "dashboard night"
+                        : "dashboard day"
+                }
+            >
 
-                <h1>
-                    🐳 스마트 백경이 룸
-                </h1>
+                <header className="header">
 
-                <button
-                    className="ranking-button"
-                    onClick={() =>
-                        setRankingOpen(true)
+                    <h1>
+                        🐳 스마트 백경이 룸
+                    </h1>
+
+                    <button
+                        className="ranking-button"
+                        onClick={async () => {
+
+                            await loadRankings();
+
+                            setRankingOpen(true);
+
+                        }}
+                    >
+                        🏆 성장기록 / 랭킹
+                    </button>
+
+                </header>
+
+                <div className="content">
+
+                    <StatusPanel
+                        stateData={stateData}
+                    />
+
+                    <BaekgyeongView
+                        stateData={stateData}
+                        onInventoryClick={() =>
+                            setInventoryOpen(true)
+                        }
+                    />
+
+                    <LogsTicker
+                        logs={logs}
+                    />
+
+                </div>
+
+                <InventoryDrawer
+                    open={inventoryOpen}
+                    onClose={() =>
+                        setInventoryOpen(false)
                     }
-                >
-                    🏆 성장기록 / 랭킹
-                </button>
-
-            </header>
-
-            <div className="content">
-
-                <StatusPanel
-                    stateData={stateData}
-                />
-
-                <BaekgyeongView
-                    stateData={stateData}
-                    onInventoryClick={() =>
-                        setInventoryOpen(true)
+                    gifts={gifts}
+                    growthStage={
+                        stateData?.growthStage
+                    }
+                    notice={
+                        inventoryNotice
                     }
                 />
 
-                <LogsTicker
-                    logs={logs}
+                <RankingModal
+                    open={rankingOpen}
+                    onClose={() =>
+                        setRankingOpen(false)
+                    }
+                    rankings={rankings}
+                    growthInfo={stateData}
+                    notice={rankingNotice}
                 />
 
+            
+
+                {toastOpen && (
+                    <div className="gift-toast">
+
+                        <div className="gift-toast-title">
+                            백경이가 선물을 가져왔어요!
+                        </div>
+
+                        <div className="gift-toast-name">
+                            {newGiftName} 획득!
+                        </div>
+
+                        <div className="gift-toast-notice">
+                            받은 선물은 대시보드에서 확인할 수 있습니다.
+                        </div>
+
+                    </div>
+                )}
             </div>
-
-            <InventoryDrawer
-                open={inventoryOpen}
-                onClose={() =>
-                    setInventoryOpen(false)
-                }
-                gifts={gifts}
-                growthStage={
-                    stateData?.growthStage
-                }
-                notice={
-                    inventoryNotice
-                }
-            />
-
-            <RankingModal
-                open={rankingOpen}
-                onClose={() =>
-                    setRankingOpen(false)
-                }
-                rankings={rankings}
-                growthInfo={stateData}
-                notice={rankingNotice}
-            />
-
-        </div>
+        </>
     );
 }

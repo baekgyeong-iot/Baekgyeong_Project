@@ -78,6 +78,95 @@
     transition: width 0.3s ease;
 }
 
+.gift-toast {
+
+    position: fixed;
+
+    top: 80px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    width: 420px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #ffffff 0%,
+            #eef7ff 100%
+        );
+
+    border-radius: 28px;
+
+    padding: 28px;
+
+    text-align: center;
+
+    border: 3px solid #8fd3ff;
+
+    box-shadow:
+        0 15px 40px rgba(0,0,0,.18);
+
+    z-index: 9999;
+
+    animation:
+        giftPopup .45s ease;
+}
+
+.gift-toast-title {
+
+    font-size: 24px;
+
+    font-weight: 800;
+
+    color: #1f3f5f;
+
+    margin-bottom: 14px;
+}
+
+.gift-toast-name {
+
+    font-size: 30px;
+
+    font-weight: 900;
+
+    color: #3182ff;
+
+    margin-bottom: 12px;
+}
+
+.gift-toast-notice {
+
+    font-size: 15px;
+
+    color: #6f7c93;
+
+    line-height: 1.6;
+}
+
+@keyframes giftPopup {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateX(-50%)
+            translateY(-30px)
+            scale(0.85);
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateX(-50%)
+            translateY(0)
+            scale(1);
+    }
+}
+
 /* 밤 */
 
 .dashboard.night {

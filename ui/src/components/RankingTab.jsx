@@ -1,14 +1,12 @@
-// components/RankingTab.jsx
+// src/components/RankingTab.jsx
+
 import "../styles/RankingTab.css";
 
 export default function RankingTab({
-
     rankings
-
 }) {
 
     const gameNames = {
-
         blue_red_flag:
             "청기백기 게임",
 
@@ -16,11 +14,10 @@ export default function RankingTab({
             "암기 게임",
 
         red_light_green_light:
-            "무궁화 꽃이 피었습니다"
+            "그냥 놀기"
     };
 
     const medals = [
-
         "🥇",
         "🥈",
         "🥉"
@@ -32,8 +29,7 @@ export default function RankingTab({
 
             {
                 Object.entries(rankings)
-                .map(
-                    ([game, records]) => (
+                    .map(([game, records]) => (
 
                         <div
                             key={game}
@@ -41,65 +37,65 @@ export default function RankingTab({
                         >
 
                             <h3>
-                                {
-                                    gameNames[
-                                        game
-                                    ]
-                                }
+                                {gameNames[game]}
                             </h3>
 
                             {
-                                records
-                                .slice(0,3)
-                                .map(
-                                    (
-                                        record,
-                                        index
-                                    ) => (
+                                records.length === 0 ? (
 
-                                        <div
-                                            key={index}
-                                            className="ranking-item"
-                                        >
+                                    <div className="empty-ranking">
 
-                                            <span>
+                                        아직 기록이 없습니다
 
-                                                {
-                                                    medals[
-                                                        index
-                                                    ]
-                                                }
+                                    </div>
 
-                                            </span>
+                                ) : (
 
-                                            <span>
+                                    records
+                                        .slice(0, 3)
+                                        .map(
+                                            (
+                                                record,
+                                                index
+                                            ) => (
 
-                                                {
-                                                    record.score
-                                                }점
+                                                <div
+                                                    key={index}
+                                                    className="ranking-item"
+                                                >
 
-                                            </span>
+                                                    <span>
+                                                        {
+                                                            medals[index]
+                                                        }
+                                                    </span>
 
-                                            <span>
+                                                    <span>
+                                                        {
+                                                            record.score
+                                                        }점
+                                                    </span>
 
-                                                {
-                                                    record.date
-                                                }
+                                                    <span>
+                                                        {
+                                                            record.date
+                                                        }
+                                                    </span>
 
-                                            </span>
+                                                </div>
 
-                                        </div>
+                                            )
+                                        )
 
-                                    )
                                 )
                             }
 
                         </div>
 
-                    )
-                )
+                    ))
             }
 
         </div>
+
     );
 }

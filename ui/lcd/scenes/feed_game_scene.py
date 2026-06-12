@@ -464,7 +464,10 @@ class FeedGameScene:
                 self.caught_food_ids,
 
             "hunger_delta":
-                self.total_hunger_gain
+                max(
+                    1,
+                    self.total_hunger_gain // 5
+                )
         }
 
     # -----------------

@@ -95,7 +95,7 @@ export default function LogsTicker({
                             <div className="log-time">
 
                                 {
-                                    log.timestamp
+                                    (log.time || log.timestamp)
                                         ?.replace("T", " ")
                                         ?.substring(0, 16)
                                 }
