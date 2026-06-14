@@ -248,7 +248,7 @@ def feed(hunger_delta: int, caught_food_ids: list[int] | None = None) -> dict[st
     return state.add_log("FEED_GAME_FINISHED", payload, source="LCD")
 
 
-def play(game_type: str, score: int, fun_delta: int) -> dict[str, Any]:
+def play(game_type: str, score: int, fun_delta: int, date_string: str | None = None) -> dict[str, Any]:
     """놀이 게임 결과를 상태에 반영한다."""
     if state.baekgyeong_state["is_runaway"]:
         return state.add_log("ACTION_IGNORED", {"reason": "is_runaway", "action": "play"})
@@ -257,13 +257,33 @@ def play(game_type: str, score: int, fun_delta: int) -> dict[str, Any]:
         state.increment_count("play_count")
     refresh_mood()
     check_runaway()
+    ranking_entry = None
+    if score > 0:
+        ranking_entry = state.add_ranking(game_type, score, date_string)
     payload = {
         "game_type": game_type,
         "score": score,
         "fun_delta": fun_delta,
         "current_fun": new_fun,
+        "ranking": ranking_entry,
     }
     return state.add_log("PLAY_GAME_FINISHED", payload, source="LCD")
+
+
+def receive_gift(gift_id: int) -> dict[str, Any]:
+    """선물 이벤트를 인벤토리에 저장하고 로그를 남긴다."""
+    gift = state.add_gift(gift_id)
+    state.baekgyeong_state["last_gift_received_date"] = state.today_string()
+    state.baekgyeong_state["last_gift_check_date"] = state.today_string()
+    return state.add_log(
+        "GIFT_EVENT_TRIGGERED",
+        {
+            "gift_id": gift["gift_id"],
+            "name": gift["name"],
+            "count": gift["count"],
+            "gift": gift,
+        },
+    )
 
 
 def start_sleep() -> dict[str, Any]:

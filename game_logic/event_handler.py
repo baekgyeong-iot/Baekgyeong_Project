@@ -36,15 +36,19 @@ def handle_event(event_message: dict[str, Any]) -> dict[str, Any]:
         return result
 
     # 놀이 게임도 화면별 점수 계산은 UI가 하고,
-    # game_logic은 fun 증가와 play_count 증가를 담당한다.
+    # game_logic은 fun 증가, play_count 증가, 랭킹 저장을 담당한다.
     if event_name == "PLAY_GAME_FINISHED":
         result = logic.play(
             game_type=str(payload.get("game_type", "unknown")),
             score=int(payload.get("score", 0)),
             fun_delta=int(payload.get("fun_delta", 0)),
+            date_string=payload.get("date"),
         )
         evolution.check_evolution(trigger="action_performed")
         return result
+
+    if event_name == "GIFT_EVENT_TRIGGERED":
+        return logic.receive_gift(gift_id=int(payload.get("gift_id", 1)))
 
     # 잠은 시작/회복 tick/종료를 분리해서 처리한다.
     if event_name == "SLEEP_STARTED":

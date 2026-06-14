@@ -28,15 +28,6 @@ app = Flask(__name__)
 CORS(app)
 
 
-# 현재는 웹 대시보드 표시용 임시 데이터다.
-# 실제 랭킹/선물 저장소가 생기면 DB나 파일 저장 구조로 바꿀 수 있다.
-RANKINGS: dict[str, list[dict[str, Any]]] = {
-    "blue_red_flag": [],
-    "memory": [],
-    "red_light_green_light": [],
-}
-
-INVENTORY: list[dict[str, Any]] = []
 MQTT_BRIDGE = None
 
 
@@ -109,10 +100,10 @@ def get_logs():
 
 @app.get("/api/rankings")
 def get_rankings():
-    """게임 랭킹 조회 API. 현재는 프론트 연결 확인용 임시 응답이다."""
+    """게임별 랭킹을 score 내림차순으로 조회한다."""
     return jsonify(
         {
-            "rankings": RANKINGS,
+            "rankings": state.get_rankings(),
             "notice": "랭킹은 대시보드에서 확인할 수 있습니다.",
         }
     )
@@ -120,10 +111,10 @@ def get_rankings():
 
 @app.get("/api/inventory")
 def get_inventory():
-    """선물함 조회 API. 현재는 프론트 연결 확인용 임시 응답이다."""
+    """백경이가 가져온 선물 인벤토리를 조회한다."""
     return jsonify(
         {
-            "gifts": INVENTORY,
+            "gifts": state.get_inventory(),
             "notice": "받은 선물은 대시보드에서 확인할 수 있습니다.",
         }
     )
