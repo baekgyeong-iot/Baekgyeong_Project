@@ -11,6 +11,9 @@ function getStoryMessage(log) {
         case "PLAY_GAME_FINISHED":
             return "🎮 백경이가 신나게 놀았어요!";
 
+        case "GIFT_EVENT_TRIGGERED":
+            return "🎁 백경이가 선물을 가져왔어요!";
+
         case "SLEEP_STARTED":
             return "😴 백경이가 잠들었어요.";
 
