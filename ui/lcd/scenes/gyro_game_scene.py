@@ -138,15 +138,32 @@ class GyroGameScene:
             "FORWARD",
             "BACKWARD"
         ):
-            return
+            print(f"[gyro]{direction}")
 
-        self.complete_game()
+            self.complete_game()
+
+            return
+        
+        elif event == "DEVICE_SHAKEN":
+            
+            shake_power = payload.get(
+                "shake_power",
+                0
+            )
+
+            print(
+                f"[shake]power={shake_power}"
+            )
+
+            self.complete_game()
 
     # ----------------------------------
     # Complete
     # ----------------------------------
 
     def complete_game(self):
+
+        print("[gyro] complete_game()")
 
         if self.detected:
             return
@@ -190,6 +207,7 @@ class GyroGameScene:
             ==
             pygame.USEREVENT + 100
         ):
+            print("[gyro] timer received")
 
             self.finished = True
 

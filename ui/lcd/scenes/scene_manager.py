@@ -571,16 +571,22 @@ class SceneManager:
 
             self.state["is_sleeping"] = True
 
-            self.current_scene = (
-                SleepScene(
-                    self.screen,
-                    self.state,
-                    self.sprites,
-                    self.font_sm,
-                    self.font_md,
-                    self.font_lg
+            if not isinstance(
+                self.current_scene,
+                SleepScene
+            ):
+
+                self.current_scene = (
+                    SleepScene(
+                        self.screen,
+                        self.state,
+                        self.sprites,
+                        self.font_sm,
+                        self.font_md,
+                        self.font_lg
+                    )
                 )
-            )
+
         elif event_name == "SLEEP_TICK":
 
             energy_delta = payload.get(
@@ -605,7 +611,12 @@ class SceneManager:
                 )
             )
 
-            self.go_home()
+            if isinstance(
+                self.current_scene,
+                SleepScene
+            ):
+
+                self.go_home()
 
         # =====================
         # 놀이
