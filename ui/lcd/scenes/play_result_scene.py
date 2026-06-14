@@ -52,7 +52,7 @@ class PlayResultScene:
         self.game_name_map = {
             "blue_red_flag": "청기백기 게임",
             "memory": "암기 게임",
-            "red_light_green_light": "무궁화 꽃이 피었습니다"
+            "red_light_green_light": "그냥 놀기"
         }
 
         self.last_click_time = 0

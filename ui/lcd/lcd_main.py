@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 from scenes.runaway_scene import RunawayScene
+from scenes.sleep_scene import SleepScene
 
 import pygame
 import time
@@ -169,6 +170,19 @@ def main() -> int:
         font_lg,
     )
 
+    scene_manager.mqtt_client = bridge
+
+    if lcd_state.get("is_runaway"):
+        scene_manager.change_scene(
+            "RUNAWAY_EVENT_TRIGGERED",
+            {
+                "is_runaway": True
+            }
+        )
+
+    elif lcd_state.get("is_sleeping"):
+        scene_manager.change_scene("SLEEP_STARTED")
+
     if lcd_state.get("is_runaway"):
         scene_manager.change_scene(
             "RUNAWAY_EVENT_TRIGGERED",
@@ -188,6 +202,35 @@ def main() -> int:
         if now - last_sync >= 500:
             backend_connected = bridge.sync_state()
             last_sync = now
+        
+        if (
+            lcd_state.get("is_sleeping")
+            and
+            not isinstance(
+                scene_manager.current_scene,
+                SleepScene
+            )
+        ):
+            scene_manager.change_scene("SLEEP_STARTED")
+
+        elif (
+            not lcd_state.get("is_sleeping")
+            and
+            isinstance(
+                scene_manager.current_scene,
+                SleepScene
+            )
+        ):
+            scene_manager.change_scene(
+                "SLEEP_ENDED",
+                {
+                    "current_energy":
+                    lcd_state.get(
+                        "energy",
+                        0
+                    )
+                }
+            )
 
         if (
             lcd_state.get("is_runaway")
@@ -234,6 +277,18 @@ def main() -> int:
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 scene_manager.handle_click(*event.pos)
+            
+                if (
+                    scene_manager.current_scene
+                    and
+                    hasattr(
+                        scene_manager.current_scene,
+                        "handle_event"
+                    )
+                ):
+                    scene_manager.current_scene.handle_event(
+                        event
+                    )
 
         scene_manager.draw()
         pygame.display.flip()
