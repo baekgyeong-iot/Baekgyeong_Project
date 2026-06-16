@@ -44,6 +44,7 @@ except ImportError:
 # 사진 속 R/G/B/- 형태 RGB 모듈은 보통 공통 캐소드라 HIGH가 켜짐이다.
 # 불이 반대로 동작하면 False로 바꾸면 된다.
 LED_ACTIVE_HIGH = True
+LED_BRIGHTNESS = 0.25
 BLINK_INTERVAL_SECONDS = 0.35
 
 LED_PINS = {
@@ -53,10 +54,11 @@ LED_PINS = {
 }
 
 
-def gpio_value(on: int) -> int:
+def pwm_duty(on: int) -> float:
+    duty = 100.0 * LED_BRIGHTNESS if on else 0.0
     if LED_ACTIVE_HIGH:
-        return GPIO.HIGH if on else GPIO.LOW
-    return GPIO.LOW if on else GPIO.HIGH
+        return duty
+    return 100.0 - duty
 
 
 class LedDaemon:
@@ -71,6 +73,7 @@ class LedDaemon:
         self.current_payload: dict[str, Any] = {}
         self.blink_on = True
         self.last_blink_at = 0.0
+        self.pwms = {}
 
     def setup_gpio(self) -> None:
         if GPIO is None:
@@ -81,7 +84,9 @@ class LedDaemon:
         for pins in LED_PINS.values():
             for pin in pins:
                 GPIO.setup(pin, GPIO.OUT)
-                GPIO.output(pin, gpio_value(0))
+                pwm = GPIO.PWM(pin, 1000)
+                pwm.start(pwm_duty(0))
+                self.pwms[pin] = pwm
 
     def on_connect(self, client, userdata, flags, reason_code, properties=None):
         print(f"[LED] MQTT connected: {reason_code}")
@@ -106,9 +111,9 @@ class LedDaemon:
 
         r_pin, g_pin, b_pin = LED_PINS[name]
         r, g, b = get_rgb_output(color)
-        GPIO.output(r_pin, gpio_value(r))
-        GPIO.output(g_pin, gpio_value(g))
-        GPIO.output(b_pin, gpio_value(b))
+        self.pwms[r_pin].ChangeDutyCycle(pwm_duty(r))
+        self.pwms[g_pin].ChangeDutyCycle(pwm_duty(g))
+        self.pwms[b_pin].ChangeDutyCycle(pwm_duty(b))
 
     def apply_payload(self) -> None:
         game_led = self.current_payload.get("game_led", "OFF")
@@ -167,6 +172,8 @@ class LedDaemon:
             self.client.loop_stop()
             for name in LED_PINS:
                 self.set_rgb(name, "OFF")
+            for pwm in self.pwms.values():
+                pwm.stop()
             GPIO.cleanup()
 
 

@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:5050/api";
+import { API_BASE_URL } from "./apiConfig";
 
 /**
  * 랭킹 조회

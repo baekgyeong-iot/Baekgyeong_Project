@@ -254,6 +254,7 @@ def play(game_type: str, score: int, fun_delta: int, date_string: str | None = N
     """놀이 게임 결과를 상태에 반영한다."""
     if state.baekgyeong_state["is_runaway"]:
         return state.add_log("ACTION_IGNORED", {"reason": "is_runaway", "action": "play"})
+    state.baekgyeong_state["game_led"] = "OFF"
     new_fun = state.adjust_stat("fun", fun_delta)
     if fun_delta > 0:
         state.increment_count("play_count")

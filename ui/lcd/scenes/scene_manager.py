@@ -753,11 +753,11 @@ class SceneManager:
 
             self.play_result = payload
 
-            if (
-                self.mqtt_client
-                and
-                not already_recorded
-            ):
+            if self.mqtt_client:
+
+                self.mqtt_client.publish_led_off()
+
+            if self.mqtt_client and not already_recorded:
 
                 self.mqtt_client.publish_play_finished(
                     payload.get(

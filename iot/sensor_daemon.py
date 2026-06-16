@@ -21,7 +21,9 @@ except ImportError:
 POLL_INTERVAL_SECONDS = 0.1
 LIGHT_REPORT_INTERVAL_SECONDS = 0.5
 SHAKE_COOLDOWN_SECONDS = 0.35
-LIGHT_DARK_WHEN_LOW = True
+# 현재 조도 센서 모듈은 어두울 때 HIGH, 밝을 때 LOW로 들어온다.
+# 반대로 동작하는 모듈이면 이 값을 True로 바꾸면 된다.
+LIGHT_DARK_WHEN_LOW = False
 SHAKE_ACTIVE_HIGH = True
 
 

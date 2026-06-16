@@ -21,8 +21,9 @@ else:
 
 
 # Flask 서버가 담당하는 시간 흐름 단위.
-# 시연에서는 5초마다 배고픔/재미/기력 변화와 수면 회복을 보여준다.
-TICK_INTERVAL_SECONDS = 5
+# 일반 수치 감소와 수면 회복은 체감 속도가 달라서 따로 움직인다.
+DECAY_TICK_INTERVAL_SECONDS = 10
+SLEEP_TICK_INTERVAL_SECONDS = 2
 
 app = Flask(__name__)
 CORS(app)
@@ -38,16 +39,16 @@ def apply_startup_progress() -> None:
             "source": "SYSTEM",
             "event": "APPLY_OFFLINE_PROGRESS",
             "payload": {
-                "tick_interval_seconds": TICK_INTERVAL_SECONDS,
+                "tick_interval_seconds": DECAY_TICK_INTERVAL_SECONDS,
             },
         }
     )
 
 
 def time_tick_loop() -> None:
-    """서버 실행 중 주기적으로 TIME_TICK 이벤트를 발생시킨다."""
+    """서버 실행 중 주기적으로 배고픔/재미/기력 감소 이벤트를 발생시킨다."""
     while True:
-        time.sleep(TICK_INTERVAL_SECONDS)
+        time.sleep(DECAY_TICK_INTERVAL_SECONDS)
         result = handle_event(
             {
                 "source": "SYSTEM",
@@ -62,6 +63,11 @@ def time_tick_loop() -> None:
         if MQTT_BRIDGE is not None:
             MQTT_BRIDGE.publish_state_update(result)
 
+
+def sleep_tick_loop() -> None:
+    """백경이가 자는 동안 더 짧은 주기로 기력을 회복시킨다."""
+    while True:
+        time.sleep(SLEEP_TICK_INTERVAL_SECONDS)
         if state.baekgyeong_state.get("is_sleeping"):
             sleep_result = handle_event(
                 {
@@ -80,6 +86,7 @@ def start_background_tasks() -> None:
     """서버 시작 시 필요한 자동 작업들을 등록한다."""
     apply_startup_progress()
     threading.Thread(target=time_tick_loop, daemon=True).start()
+    threading.Thread(target=sleep_tick_loop, daemon=True).start()
     start_mqtt_bridge()
 
 

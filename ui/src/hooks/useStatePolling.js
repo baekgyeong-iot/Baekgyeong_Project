@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const API_BASE_URL = "http://localhost:5050/api";
+import { API_BASE_URL } from "../services/apiConfig";
 
 export default function useStatePolling(
   interval = 3000
