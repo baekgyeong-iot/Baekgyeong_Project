@@ -14,7 +14,7 @@ from mqtt_publisher import (
 
 def send_light_event():
 
-    light_value = random.randint(0,300)
+    light_value = random.randint(0,300) # 테스트 시 고정값이 필요하면 그 값으로 변경
 
     is_dark = light_value < 100
 
@@ -40,7 +40,7 @@ def send_light_event():
 
 def send_shake_event():
 
-    shake_power = random.randint(1, 10)
+    shake_power = random.randint(1, 10) #  테스트 시 고정값이 필요하면 그 값으로 변경
 
     publish_event(
 
