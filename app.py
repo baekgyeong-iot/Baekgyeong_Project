@@ -21,8 +21,8 @@ else:
 
 
 # Flask 서버가 담당하는 시간 흐름 단위.
-# 실제 게임에서는 60초마다 배고픔/재미/기력이 1씩 감소한다.
-TICK_INTERVAL_SECONDS = 60
+# 시연에서는 5초마다 배고픔/재미/기력 변화와 수면 회복을 보여준다.
+TICK_INTERVAL_SECONDS = 5
 
 app = Flask(__name__)
 CORS(app)
@@ -48,7 +48,7 @@ def time_tick_loop() -> None:
     """서버 실행 중 주기적으로 TIME_TICK 이벤트를 발생시킨다."""
     while True:
         time.sleep(TICK_INTERVAL_SECONDS)
-        handle_event(
+        result = handle_event(
             {
                 "source": "SYSTEM",
                 "event": "TIME_TICK",
@@ -59,6 +59,21 @@ def time_tick_loop() -> None:
                 },
             }
         )
+        if MQTT_BRIDGE is not None:
+            MQTT_BRIDGE.publish_state_update(result)
+
+        if state.baekgyeong_state.get("is_sleeping"):
+            sleep_result = handle_event(
+                {
+                    "source": "SYSTEM",
+                    "event": "SLEEP_TICK",
+                    "payload": {
+                        "energy_delta": 1,
+                    },
+                }
+            )
+            if MQTT_BRIDGE is not None:
+                MQTT_BRIDGE.publish_state_update(sleep_result)
 
 
 def start_background_tasks() -> None:
@@ -131,6 +146,8 @@ def post_event():
     """LCD, 웹, IoT 쪽에서 발생한 이벤트를 game_logic으로 전달한다."""
     event_message = request.get_json(silent=True) or {}
     result = handle_event(event_message)
+    if MQTT_BRIDGE is not None:
+        MQTT_BRIDGE.publish_state_update(result)
     return jsonify(
         {
             "result": result,

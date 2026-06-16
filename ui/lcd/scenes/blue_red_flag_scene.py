@@ -14,11 +14,7 @@ COLOR_BG = (73, 116, 181)
 
 COLOR_WHITE = (255, 255, 255)
 
-COLOR_BLUE = (100, 100, 255)
-COLOR_RED = (255, 100, 100)
-
-COLOR_BTN_BORDER = (255,255,255)
-COLOR_BTN_TEXT = (255,255,255)
+COLOR_DARK = (32, 55, 88)
 
 
 class BlueRedFlagScene:
@@ -55,7 +51,7 @@ class BlueRedFlagScene:
             pygame.time.get_ticks()
         )
 
-        self.last_input_time = 0
+        self.last_input_time = -250
 
         self.player_pose = "IDLE"
 
@@ -65,24 +61,6 @@ class BlueRedFlagScene:
             random.choice(
                 ["LEFT", "RIGHT"]
             )
-        )
-
-    # --------------------------------
-    # 터치 버튼 영역
-    # --------------------------------
-
-        self.left_button_rect = pygame.Rect(
-            20,
-            250,
-            180,
-            50
-        )
-
-        self.right_button_rect = pygame.Rect(
-            280,
-            250,
-            180,
-            50
         )
 
         self.send_led()
@@ -168,11 +146,11 @@ class BlueRedFlagScene:
 
         self.draw_header()
 
-        self.draw_led()
+        self.draw_led_hint()
 
         self.draw_character()
 
-        self.draw_touch_buttons()
+        self.draw_button_hint()
 
     # --------------------------------
     # Header
@@ -216,41 +194,22 @@ class BlueRedFlagScene:
         )
 
     # --------------------------------
-    # LCD 표시용 LED
+    # LCD 안내 문구
     # --------------------------------
 
-    def draw_led(self):
+    def draw_led_hint(self):
 
-        left_color = (
+        led_text = "LED에 맞춰 버튼을 누르세요"
 
-            COLOR_BLUE
-
-            if self.current_led == "LEFT"
-
-            else COLOR_WHITE
+        text = self.font_md.render(
+            led_text,
+            True,
+            COLOR_WHITE
         )
 
-        right_color = (
-
-            COLOR_RED
-
-            if self.current_led == "RIGHT"
-
-            else COLOR_WHITE
-        )
-
-        pygame.draw.circle(
-            self.screen,
-            left_color,
-            (120, 90),
-            25
-        )
-
-        pygame.draw.circle(
-            self.screen,
-            right_color,
-            (360, 90),
-            25
+        self.screen.blit(
+            text,
+            text.get_rect(center=(SCREEN_WIDTH // 2, 90))
         )
 
     # --------------------------------
@@ -320,69 +279,31 @@ class BlueRedFlagScene:
             )
 
     # --------------------------------
-    # 터치 버튼 UI
+    # 물리 버튼 안내
     # --------------------------------
 
-    def draw_touch_buttons(self):
+    def draw_button_hint(self):
 
         pygame.draw.rect(
             self.screen,
-            COLOR_BLUE,
-            self.left_button_rect,
-            border_radius = 12
+            COLOR_DARK,
+            pygame.Rect(70, 258, 340, 38),
+            border_radius=12
         )
 
-        pygame.draw.rect(
-            self.screen,
-            COLOR_BTN_BORDER,
-            self.left_button_rect,
-            3,
-            border_radius= 12
-        )
-
-        pygame.draw.rect(
-            self.screen,
-            COLOR_RED,
-            self.right_button_rect,
-            border_radius = 12
-        )
-
-        pygame.draw.rect(
-            self.screen,
-            COLOR_BTN_BORDER,
-            self.right_button_rect,
-            3,
-            border_radius= 12
-        )
-
-        left_text = self.font_md.render(
-            "왼쪽",
+        hint = self.font_sm.render(
+            "실제 왼쪽/오른쪽 버튼을 누르세요",
             True,
-            COLOR_BTN_TEXT
-        )
-
-        right_text = self.font_md.render(
-            "오른쪽",
-            True,
-            COLOR_BTN_TEXT
+            COLOR_WHITE
         )
 
         self.screen.blit(
-            left_text,
-            left_text.get_rect(
-                center = self.left_button_rect.center
-            )
-        )
-
-        self.screen.blit(
-            right_text,
-            right_text.get_rect(
-                center = self.right_button_rect.center
-            )
+            hint,
+            hint.get_rect(center=(240, 277))
         )
 
     # --------------------------------
-    # 터치 입력
+    # 터치 입력 비활성화
     # --------------------------------
 
     def handle_click(
@@ -390,23 +311,10 @@ class BlueRedFlagScene:
             mx,
             my
     ):
-        
-        if self.left_button_rect.collidepoint(
-            mx,
-            my
-        ):
-            self.handle_button("LEFT")
+        return None
 
-            return True
-        
-        if self.right_button_rect.collidepoint(
-            mx,
-            my
-        ):
-            self.handle_button("RIGHT")
-
-            return True
-        
+    def handle_short_press(self, direction):
+        self.handle_button(direction)
         return None
 
     # --------------------------------
@@ -451,7 +359,7 @@ class BlueRedFlagScene:
 
             self.score = max(
                 0,
-                self.score - 5
+                self.score - 50
             )
 
     # --------------------------------

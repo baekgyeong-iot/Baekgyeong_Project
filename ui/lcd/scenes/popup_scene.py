@@ -13,6 +13,7 @@ COLOR_BUTTON_ACTIVE = (55, 90, 150)
 
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0, 0, 0)
+COLOR_SELECTED_BORDER = (255, 255, 255)
 
 class PopupScene:
 
@@ -230,6 +231,14 @@ class PopupScene:
             border_radius=8
         )
 
+        pygame.draw.rect(
+            self.screen,
+            COLOR_SELECTED_BORDER,
+            self.ok_button,
+            4,
+            border_radius=8
+        )
+
         text = self.font_md.render(
             "확인",
             True,
@@ -275,3 +284,9 @@ class PopupScene:
             return "POPUP_CLOSE"
 
         return None
+
+    def confirm_selection(self):
+        self.button_pressed_time = pygame.time.get_ticks()
+        if self.popup_type == "evolution":
+            return "EVOLUTION_CONFIRMED"
+        return "POPUP_CLOSE"

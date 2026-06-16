@@ -298,6 +298,56 @@ class SceneManager:
                     "RIGHT"
                 )            
 
+    def _apply_scene_result(self, result):
+        payload = None
+
+        if isinstance(result, dict):
+            event_name = result.get("event")
+            payload = result.get("payload", {})
+        else:
+            event_name = result
+
+        if event_name:
+            self.publish_event(event_name, payload)
+            self.change_scene(event_name, payload)
+
+        return event_name
+
+    def handle_button_short(self, direction):
+        if not self.current_scene:
+            return None
+
+        if hasattr(self.current_scene, "handle_short_press"):
+            return self._apply_scene_result(
+                self.current_scene.handle_short_press(direction)
+            )
+
+        if hasattr(self.current_scene, "move_selection"):
+            self.current_scene.move_selection(direction)
+            return None
+
+        if hasattr(self.current_scene, "handle_button"):
+            self.current_scene.handle_button(direction)
+            return None
+
+        return None
+
+    def handle_button_long(self, direction):
+        if not self.current_scene:
+            return None
+
+        if hasattr(self.current_scene, "handle_long_press"):
+            return self._apply_scene_result(
+                self.current_scene.handle_long_press(direction)
+            )
+
+        if hasattr(self.current_scene, "confirm_selection"):
+            return self._apply_scene_result(
+                self.current_scene.confirm_selection()
+            )
+
+        return None
+
     # -------------------------
     # click
     # -------------------------
@@ -338,19 +388,14 @@ class SceneManager:
 
             event_name = click_result
 
-        if event_name:
-
-            self.publish_event(
-                event_name,
-                payload
-            )
-
-            self.change_scene(
-                event_name,
-                payload
-            )
-
-        return event_name
+        return self._apply_scene_result(
+            {
+                "event": event_name,
+                "payload": payload
+            }
+            if event_name
+            else None
+        )
     
     # =====================
     # 호감도 구간 계산
@@ -664,6 +709,7 @@ class SceneManager:
                         self.screen,
                         self.state,
                         self.sprites,
+                        self.mqtt_client,
                         self.font_sm,
                         self.font_md,
                         self.font_lg
@@ -690,17 +736,28 @@ class SceneManager:
                 0
             )
 
-            self.state["fun"] = min(
-                100,
-                self.state.get(
-                    "fun",
-                    0
-                ) + fun_delta
+            already_recorded = payload.get(
+                "already_recorded",
+                False
             )
+
+            if not already_recorded:
+
+                self.state["fun"] = min(
+                    100,
+                    self.state.get(
+                        "fun",
+                        0
+                    ) + fun_delta
+                )
 
             self.play_result = payload
 
-            if self.mqtt_client:
+            if (
+                self.mqtt_client
+                and
+                not already_recorded
+            ):
 
                 self.mqtt_client.publish_play_finished(
                     payload.get(

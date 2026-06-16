@@ -15,6 +15,7 @@ COLOR_RED = (255, 95, 86)
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (30, 30, 30)
 COLOR_GRAY = (110, 110, 110)
+COLOR_SELECTED_BORDER = (255, 255, 255)
 
 
 class FeedConfirmScene:
@@ -61,6 +62,7 @@ class FeedConfirmScene:
             100,
             45
         )
+        self.selected_idx = 0
 
     # --------------------------
     # Draw
@@ -177,6 +179,16 @@ class FeedConfirmScene:
             border_radius=10
         )
 
+        for idx, rect in enumerate([self.confirm_button, self.cancel_button]):
+            if idx == self.selected_idx:
+                pygame.draw.rect(
+                    self.screen,
+                    COLOR_SELECTED_BORDER,
+                    rect,
+                    4,
+                    border_radius=10
+                )
+
         start_text = self.font_md.render(
             "시작",
             True,
@@ -216,3 +228,14 @@ class FeedConfirmScene:
             return "FEED_CANCELLED"
         
         return None
+
+    def move_selection(self, direction):
+        if direction == "LEFT":
+            self.selected_idx = 0
+        elif direction == "RIGHT":
+            self.selected_idx = 1
+
+    def confirm_selection(self):
+        if self.selected_idx == 0:
+            return "FEED_CONFIRMED"
+        return "FEED_CANCELLED"

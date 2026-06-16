@@ -47,6 +47,28 @@ def handle_event(event_message: dict[str, Any]) -> dict[str, Any]:
         evolution.check_evolution(trigger="action_performed")
         return result
 
+    # 그냥 놀기는 LCD 화면에서 제한 시간 동안 센서 입력을 누적한다.
+    # 여기서는 센서 이벤트를 로그로 남기고, 최종 결과는 LCD가 PLAY_GAME_FINISHED로 보낸다.
+    if event_name == "GYRO_CHANGED":
+        direction = str(payload.get("tilt_direction", "")).upper()
+        if direction in {"LEFT", "RIGHT", "FORWARD", "BACKWARD"}:
+            return state.add_log(
+                "GYRO_CHANGED",
+                {**payload, "tilt_direction": direction},
+                source=event_message.get("source", "GYRO"),
+            )
+        return state.add_log("GYRO_CHANGED_IGNORED", payload, source=event_message.get("source", "GYRO"))
+
+    if event_name == "DEVICE_SHAKEN":
+        return state.add_log(
+            "DEVICE_SHAKEN",
+            {
+                **payload,
+                "shake_power": int(payload.get("shake_power", 1)),
+            },
+            source=event_message.get("source", "GYRO"),
+        )
+
     if event_name == "GIFT_EVENT_TRIGGERED":
         return logic.receive_gift(gift_id=int(payload.get("gift_id", 1)))
 

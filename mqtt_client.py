@@ -211,15 +211,13 @@ def normalize_event(event_message: dict[str, Any]) -> dict[str, Any]:
         return {"source": source, "event": "STROKE_ATTEMPT", "payload": payload}
 
     if event == "DEVICE_SHAKEN":
-        shake_power = int(payload.get("shake_power", 0))
         return {
             "source": source,
-            "event": "PLAY_GAME_FINISHED",
+            "event": "DEVICE_SHAKEN",
             "payload": {
-                "game_type": "red_light_green_light",
-                "score": shake_power * 10,
-                "fun_delta": max(1, min(10, shake_power)),
-            },
+                **payload,
+                "shake_power": int(payload.get("shake_power", 1)),
+            }
         }
 
     if event == "FOOD_CAUGHT":

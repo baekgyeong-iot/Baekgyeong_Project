@@ -60,11 +60,13 @@ def refresh_mood() -> str:
 
 
 def led_color(value: int) -> str:
-    if value <= 30:
-        return "RED"
-    if value <= 50:
+    if value >= 50:
+        return "GREEN"
+    if value >= 30:
         return "YELLOW"
-    return "GREEN"
+    if value >= 10:
+        return "RED"
+    return "BLINK_RED"
 
 
 def get_led_state() -> dict[str, str]:

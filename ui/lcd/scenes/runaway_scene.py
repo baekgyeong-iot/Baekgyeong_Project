@@ -11,6 +11,7 @@ COLOR_BUTTON = (46, 204, 113)
 
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0, 0, 0)
+COLOR_SELECTED_BORDER = (255, 255, 255)
 
 class RunawayScene:
 
@@ -140,6 +141,14 @@ class RunawayScene:
             border_radius=8
         )
 
+        pygame.draw.rect(
+            self.screen,
+            COLOR_SELECTED_BORDER,
+            self.restart_button,
+            4,
+            border_radius=8
+        )
+
         button_text = self.font_md.render(
             "새로 키우기",
             True,
@@ -185,3 +194,9 @@ class RunawayScene:
     def handle_system_event(self, event_name, payload=None):
         # 현재는 단순 씬이라 별도 처리 없음
         pass
+
+    def confirm_selection(self):
+        return {
+            "event": "NEW_BAEKGYEONG_REQUESTED",
+            "payload": {}
+        }

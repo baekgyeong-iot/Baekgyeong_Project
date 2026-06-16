@@ -18,13 +18,14 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from asset_loader import load_fonts, load_food_sprites, load_icons, load_sprites
+from button_input import ButtonInput
 from game_logic import event_handler, state as local_state
 from scenes.scene_manager import SceneManager
 
 SCREEN_WIDTH = 480
 SCREEN_HEIGHT = 320
 FPS = 30
-TICK_MS = 60000
+TICK_MS = 5000
 API_BASE_URL = "http://localhost:5050/api"
 
 
@@ -32,6 +33,7 @@ class LogicBridge:
     def __init__(self, lcd_state: dict) -> None:
         self.lcd_state = lcd_state
         self.message_lock_until = 0
+        self.last_log_key = None
 
     def _get_backend_state(self) -> dict | None:
         try:
@@ -39,6 +41,41 @@ class LogicBridge:
                 return json.loads(response.read().decode("utf-8"))
         except (OSError, URLError, TimeoutError, json.JSONDecodeError):
             return None
+
+    def _get_backend_logs(self) -> list[dict]:
+        try:
+            with urlopen(f"{API_BASE_URL}/logs?limit=8", timeout=0.2) as response:
+                data = json.loads(response.read().decode("utf-8"))
+                logs = data.get("logs", [])
+                return logs if isinstance(logs, list) else []
+        except (OSError, URLError, TimeoutError, json.JSONDecodeError):
+            return []
+
+    def _log_key(self, log: dict) -> str:
+        payload = log.get("payload", {})
+        try:
+            payload_text = json.dumps(payload, sort_keys=True, ensure_ascii=False)
+        except TypeError:
+            payload_text = str(payload)
+        return f"{log.get('timestamp')}|{log.get('event')}|{payload_text}"
+
+    def poll_backend_events(self) -> list[dict]:
+        logs = self._get_backend_logs()
+        if not logs:
+            return []
+
+        if self.last_log_key is None:
+            self.last_log_key = self._log_key(logs[-1])
+            return []
+
+        new_logs = []
+        for log in reversed(logs):
+            if self._log_key(log) == self.last_log_key:
+                break
+            new_logs.append(log)
+
+        self.last_log_key = self._log_key(logs[-1])
+        return list(reversed(new_logs))
 
     def sync_state(self) -> bool:
         current = self._get_backend_state()
@@ -183,102 +220,164 @@ def main() -> int:
     elif lcd_state.get("is_sleeping"):
         scene_manager.change_scene("SLEEP_STARTED")
 
-    if lcd_state.get("is_runaway"):
-        scene_manager.change_scene(
-            "RUNAWAY_EVENT_TRIGGERED",
-            {
-                "is_runaway": True
-            }
-        )
-    scene_manager.mqtt_client = bridge
-
     last_tick = pygame.time.get_ticks()
     last_sync = 0
+    button_input = ButtonInput()
+    keyboard_buttons = {
+        pygame.K_LEFT: {
+            "direction": "LEFT",
+            "is_down": False,
+            "down_at": 0,
+            "long_sent": False,
+        },
+        pygame.K_RIGHT: {
+            "direction": "RIGHT",
+            "is_down": False,
+            "down_at": 0,
+            "long_sent": False,
+        },
+    }
     running = True
 
-    while running:
-        now = pygame.time.get_ticks()
+    try:
+        while running:
+            now = pygame.time.get_ticks()
 
-        if now - last_sync >= 500:
-            backend_connected = bridge.sync_state()
-            last_sync = now
+            if now - last_sync >= 500:
+                backend_connected = bridge.sync_state()
+                for log in bridge.poll_backend_events():
+                    event_name = log.get("event")
+                    payload = log.get("payload", {})
+                    if event_name in {
+                        "GIFT_EVENT_TRIGGERED",
+                        "EVO_EVENT_TRIGGERED",
+                        "RUNAWAY_EVENT_TRIGGERED",
+                        "GYRO_CHANGED",
+                        "DEVICE_SHAKEN",
+                    }:
+                        scene_manager.handle_system_event(event_name, payload)
+                    elif (
+                        event_name == "PLAY_GAME_FINISHED"
+                        and
+                        payload.get("game_type") == "red_light_green_light"
+                        and
+                        scene_manager.current_scene.__class__.__name__ == "GyroGameScene"
+                    ):
+                        scene_manager.handle_system_event(
+                            event_name,
+                            {
+                                **payload,
+                                "already_recorded": True,
+                            },
+                        )
+                last_sync = now
         
-        if (
-            lcd_state.get("is_sleeping")
-            and
-            not isinstance(
-                scene_manager.current_scene,
-                SleepScene
-            )
-        ):
-            scene_manager.change_scene("SLEEP_STARTED")
+            if (
+                lcd_state.get("is_sleeping")
+                and
+                not isinstance(
+                    scene_manager.current_scene,
+                    SleepScene
+                )
+            ):
+                scene_manager.change_scene("SLEEP_STARTED")
 
-        elif (
-            not lcd_state.get("is_sleeping")
-            and
-            isinstance(
-                scene_manager.current_scene,
-                SleepScene
-            )
-        ):
-            scene_manager.change_scene(
-                "SLEEP_ENDED",
-                {
-                    "current_energy":
-                    lcd_state.get(
-                        "energy",
-                        0
-                    )
-                }
-            )
+            elif (
+                not lcd_state.get("is_sleeping")
+                and
+                isinstance(
+                    scene_manager.current_scene,
+                    SleepScene
+                )
+            ):
+                scene_manager.change_scene(
+                    "SLEEP_ENDED",
+                    {
+                        "current_energy":
+                        lcd_state.get(
+                            "energy",
+                            0
+                        )
+                    }
+                )
 
-        if (
-            lcd_state.get("is_runaway")
-            and
-            not isinstance(
-                scene_manager.current_scene,
-                RunawayScene
-            )
-        ):
-            scene_manager.change_scene(
-                "RUNAWAY_EVENT_TRIGGERED"
-            )
+            if (
+                lcd_state.get("is_runaway")
+                and
+                not isinstance(
+                    scene_manager.current_scene,
+                    RunawayScene
+                )
+            ):
+                scene_manager.change_scene(
+                    "RUNAWAY_EVENT_TRIGGERED"
+                )
         
-        elif (
-            not lcd_state.get("is_runaway")
-            and
-            isinstance(
-                scene_manager.current_scene,
-                RunawayScene
-            )
-        ):
-            scene_manager.go_home()
+            elif (
+                not lcd_state.get("is_runaway")
+                and
+                isinstance(
+                    scene_manager.current_scene,
+                    RunawayScene
+                )
+            ):
+                scene_manager.go_home()
 
-        if not backend_connected and now - last_tick >= TICK_MS:
-            bridge.dispatch("TIME_TICK")
-            last_tick += TICK_MS
+            if not backend_connected and now - last_tick >= TICK_MS:
+                bridge.dispatch("TIME_TICK")
+                last_tick += TICK_MS
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+            for action, direction in button_input.poll():
+                if action == "SHORT":
+                    scene_manager.handle_button_short(direction)
+                elif action == "LONG":
+                    scene_manager.handle_button_long(direction)
 
-            elif event.type == pygame.KEYDOWN:
-                if event.key in (pygame.K_ESCAPE, pygame.K_q):
-                    running = False
-                elif event.key == pygame.K_t:
-                    bridge.dispatch("TIME_TICK")
-                    last_tick = now
-                elif event.key == pygame.K_r:
-                    bridge.dispatch("NEW_BAEKGYEONG_REQUESTED")
-                    scene_manager.go_home()
-                    last_tick = now
-                else:
-                    scene_manager.handle_key(event.key)
-
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                scene_manager.handle_click(*event.pos)
-            
+            for key_state in keyboard_buttons.values():
                 if (
+                    key_state["is_down"]
+                    and
+                    not key_state["long_sent"]
+                    and
+                    now - key_state["down_at"] >= button_input.long_press_ms
+                ):
+                    scene_manager.handle_button_long(key_state["direction"])
+                    key_state["long_sent"] = True
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+                elif event.type == pygame.KEYDOWN:
+                    if event.key in (pygame.K_ESCAPE, pygame.K_q):
+                        running = False
+                    elif event.key == pygame.K_t:
+                        bridge.dispatch("TIME_TICK")
+                        last_tick = now
+                    elif event.key == pygame.K_r:
+                        bridge.dispatch("NEW_BAEKGYEONG_REQUESTED")
+                        scene_manager.go_home()
+                        last_tick = now
+                    elif event.key in keyboard_buttons:
+                        key_state = keyboard_buttons[event.key]
+                        if not key_state["is_down"]:
+                            key_state["is_down"] = True
+                            key_state["down_at"] = now
+                            key_state["long_sent"] = False
+                    elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                        scene_manager.handle_button_long("RIGHT")
+                    else:
+                        scene_manager.handle_key(event.key)
+
+                elif event.type == pygame.KEYUP and event.key in keyboard_buttons:
+                    key_state = keyboard_buttons[event.key]
+                    if key_state["is_down"] and not key_state["long_sent"]:
+                        scene_manager.handle_button_short(key_state["direction"])
+                    key_state["is_down"] = False
+                    key_state["down_at"] = 0
+                    key_state["long_sent"] = False
+
+                elif (
                     scene_manager.current_scene
                     and
                     hasattr(
@@ -290,11 +389,12 @@ def main() -> int:
                         event
                     )
 
-        scene_manager.draw()
-        pygame.display.flip()
-        clock.tick(FPS)
-
-    pygame.quit()
+            scene_manager.draw()
+            pygame.display.flip()
+            clock.tick(FPS)
+    finally:
+        button_input.close()
+        pygame.quit()
     return 0
 
 if __name__ == "__main__":

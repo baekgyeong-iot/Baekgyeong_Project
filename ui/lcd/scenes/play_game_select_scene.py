@@ -20,6 +20,7 @@ COLOR_BORDER = (
     67,
     110
 )
+COLOR_SELECTED_BORDER = (255, 255, 255)
 
 COLOR_BUTTON = (
     224,
@@ -62,7 +63,7 @@ class PlayGameSelectScene:
         self.font_md = font_md
         self.font_lg = font_lg
 
-        self.selected_idx = None
+        self.selected_idx = 0
         self.button_pressed_time = 0
 
         self.last_click_time = 0
@@ -140,14 +141,6 @@ class PlayGameSelectScene:
             "그냥 놀기"
         ]
 
-        now = pygame.time.get_ticks()
-
-        if (
-            now - self.button_pressed_time
-            > 200
-        ):
-            self.selected_idx = None
-
         for idx, rect in enumerate(rects):
 
             color = (
@@ -165,9 +158,9 @@ class PlayGameSelectScene:
 
             pygame.draw.rect(
                 self.screen,
-                COLOR_BORDER,
+                COLOR_SELECTED_BORDER if idx == self.selected_idx else COLOR_BORDER,
                 rect,
-                2,
+                4 if idx == self.selected_idx else 2,
                 border_radius=12
             )
 
@@ -250,3 +243,22 @@ class PlayGameSelectScene:
             }
 
         return None
+
+    def move_selection(self, direction):
+        if direction == "LEFT":
+            self.selected_idx = (self.selected_idx - 1) % 3
+        else:
+            self.selected_idx = (self.selected_idx + 1) % 3
+
+    def confirm_selection(self):
+        game_types = [
+            "blue_red_flag",
+            "memory",
+            "red_light_green_light"
+        ]
+        return {
+            "event": "PLAY_GAME_SELECTED",
+            "payload": {
+                "game_type": game_types[self.selected_idx]
+            }
+        }

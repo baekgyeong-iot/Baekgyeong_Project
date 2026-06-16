@@ -5,475 +5,212 @@ SCREEN_WIDTH = 480
 SCREEN_HEIGHT = 320
 
 COLOR_BG = (73, 116, 181)
-
 COLOR_WHITE = (255, 255, 255)
-COLOR_BLACK = (0, 0, 0)
-
-COLOR_BLUE = (100, 100, 255)
-COLOR_BLUE_ACTIVE = (60, 60, 220)
-
-COLOR_RED = (255, 100, 100)
-COLOR_RED_ACTIVE = (220, 60, 60)
+COLOR_DARK = (32, 55, 88)
 
 MAX_ROUND = 5
+FLASH_INTERVAL_MS = 800
 
 
 class MemoryGameScene:
-
     def __init__(
         self,
         screen,
         state,
         sprites,
+        mqtt_client,
         font_sm,
         font_md,
         font_lg
     ):
-
         self.screen = screen
         self.state = state
         self.sprites = sprites
+        self.mqtt_client = mqtt_client
 
         self.font_sm = font_sm
         self.font_md = font_md
         self.font_lg = font_lg
 
         self.finished = False
-
         self.score = 0
         self.round = 1
-
-        # 터치 버튼
-        self.left_button_rect = pygame.Rect(
-            20,
-            250,
-            200,
-            55
-        )
-
-        self.right_button_rect = pygame.Rect(
-            260,
-            250,
-            200,
-            55
-        )
 
         self.active_button = None
         self.button_press_time = 0
 
         self.sequence = []
         self.user_inputs = []
-
         self.showing_sequence = True
-
         self.sequence_index = 0
-
         self.last_flash = pygame.time.get_ticks()
-        self.flash_interval = 800
-
-        self.result_message = ""
+        self.led_off_sent = False
+        self.published_sequence_index = None
 
         self.generate_round()
 
     def handle_click(self, mx, my):
-
-        if self.showing_sequence:
-            return None
-        
-        if self.left_button_rect.collidepoint(
-            mx,
-            my
-        ):
-            self.active_button = "LEFT"
-            self.button_press_time = pygame.time.get_ticks()
-
-            self.handle_button("LEFT")
-
-            return True
-        
-        if self.right_button_rect.collidepoint(
-            mx,
-            my
-        ):
-            self.active_button = "RIGHT"
-            self.button_press_time = pygame.time.get_ticks()
-
-            self.handle_button("RIGHT")
-
-            return True
-        
         return None
 
-    # -------------------------
-    # Round 생성
-    # -------------------------
-
     def generate_round(self):
-
         self.sequence = [
-
-            random.choice(
-                ["LEFT","RIGHT"]
-            )
-
+            random.choice(["LEFT", "RIGHT"])
             for _ in range(self.round + 2)
         ]
-
         self.user_inputs = []
-
         self.sequence_index = 0
-
         self.showing_sequence = True
-
         self.last_flash = pygame.time.get_ticks()
-
-        self.result_message = ""
-
-    # -------------------------
-    # Draw
-    # -------------------------
+        self.led_off_sent = False
+        self.published_sequence_index = None
+        self.publish_current_led()
 
     def draw(self):
-
-        self.screen.fill(
-            COLOR_BG
-        )
-
+        self.screen.fill(COLOR_BG)
         self.draw_header()
-
-        self.draw_led()
-
+        self.draw_led_instruction()
         self.draw_character()
-
         self.draw_info()
 
-        if not self.showing_sequence:
-            self.draw_touch_buttons()
-
-    # -------------------------
-    # Header
-    # -------------------------
-
     def draw_header(self):
-
         title = self.font_md.render(
             f"암기게임 ROUND {self.round}",
             True,
             COLOR_WHITE
         )
-
-        self.screen.blit(
-            title,
-            (20,20)
-        )
+        self.screen.blit(title, (20, 20))
 
         score = self.font_md.render(
             f"점수 {self.score}",
             True,
             COLOR_WHITE
         )
+        self.screen.blit(score, (340, 20))
 
-        self.screen.blit(
-            score,
-            (340,20)
-        )
-
-    # -------------------------
-    # 터치 버튼
-    # -------------------------
-
-    def draw_touch_buttons(self):
-
-        now = pygame.time.get_ticks()
-
-        if now - self.button_press_time > 150:
-            self.active_button = None
-
-        left_color = (
-            COLOR_BLUE_ACTIVE
-            if self.active_button == "LEFT"
-            else COLOR_BLUE
-        )
-
-        right_color = (
-            COLOR_RED_ACTIVE
-            if self.active_button == "RIGHT"
-            else COLOR_RED
-        )
-
-        pygame.draw.rect(
-            self.screen,
-            left_color,
-            self.left_button_rect,
-            border_radius = 12
-        )
-
-        pygame.draw.rect(
-            self.screen,
-            right_color,
-            self.right_button_rect,
-            border_radius = 12
-        )
-
-        pygame.draw.rect(
-            self.screen,
-            COLOR_WHITE,
-            self.left_button_rect,
-            3,
-            border_radius = 12
-        )
-
-        pygame.draw.rect(
-            self.screen,
-            COLOR_WHITE,
-            self.right_button_rect,
-            3,
-            border_radius = 12
-        )
-
-        left_text = self.font_md.render(
-            "◀ 왼쪽",
-            True,
-            COLOR_WHITE
-        )
-
-        right_text = self.font_md.render(
-            "오른쪽 ▶",
-            True,
-            COLOR_WHITE
-        )
-
-        self.screen.blit(
-            left_text,
-            left_text.get_rect(
-                center = self.left_button_rect.center
-            )
-        )
-
-        self.screen.blit(
-            right_text,
-            right_text.get_rect(
-                center = self.right_button_rect.center
-            )
-        )
-
-    # -------------------------
-    # LED 표시
-    # -------------------------
-
-    def draw_led(self):
-
-        left_color = COLOR_WHITE
-        right_color = COLOR_WHITE
-
+    def draw_led_instruction(self):
         if self.showing_sequence:
+            label = "LED 순서를 기억하세요"
+        else:
+            label = "실제 왼쪽/오른쪽 버튼을 입력하세요"
 
-            now = pygame.time.get_ticks()
-
-            if (
-                now - self.last_flash
-                < 400
-            ):
-
-                if (
-                    self.sequence_index
-                    < len(self.sequence)
-                ):
-
-                    current = (
-                        self.sequence[
-                            self.sequence_index
-                        ]
-                    )
-
-                    if current == "LEFT":
-
-                        left_color = COLOR_BLUE
-
-                    else:
-
-                        right_color = COLOR_RED
-
-        pygame.draw.circle(
+        panel = pygame.Rect(70, 80, 340, 44)
+        pygame.draw.rect(
             self.screen,
-            left_color,
-            (140,120),
-            35
+            COLOR_DARK,
+            panel,
+            border_radius=12
         )
 
-        pygame.draw.circle(
-            self.screen,
-            right_color,
-            (340,120),
-            35
-        )
-
-    # -------------------------
-    # 캐릭터
-    # -------------------------
+        text = self.font_md.render(label, True, COLOR_WHITE)
+        self.screen.blit(text, text.get_rect(center=panel.center))
 
     def draw_character(self):
-
-        stage = self.state.get(
-            "growth_stage",
-            "BABY"
-        )
-
-        basic = (
-            self.sprites
-            .get(stage,{})
-            .get("BASIC",[])
-        )
+        stage = self.state.get("growth_stage", "BABY")
+        basic = self.sprites.get(stage, {}).get("BASIC", [])
 
         if not basic:
             return
 
-        frame = (
-
-            pygame.time.get_ticks()
-            // 500
-
-        ) % len(basic)
-
+        frame = (pygame.time.get_ticks() // 500) % len(basic)
         sprite = basic[frame]
-
-        self.screen.blit(
-            sprite,
-            (185,130)
-        )
-
-    # -------------------------
-    # 설명
-    # -------------------------
+        self.screen.blit(sprite, sprite.get_rect(center=(240, 180)))
 
     def draw_info(self):
-
-        if self.showing_sequence:
-
-            msg = "순서를 기억하세요"
-
-        else:
-
-            msg = "버튼을 입력하세요"
-
-        text = self.font_sm.render(
-            msg,
-            True,
-            COLOR_WHITE
-        )
-
+        msg = "순서를 기억하세요" if self.showing_sequence else "버튼을 입력하세요"
+        text = self.font_sm.render(msg, True, COLOR_WHITE)
         self.screen.blit(
             text,
             (
-                SCREEN_WIDTH//2
-                - text.get_width()//2,
+                SCREEN_WIDTH // 2 - text.get_width() // 2,
                 280
             )
         )
 
-    # -------------------------
-    # Update
-    # -------------------------
-
     def update(self):
-
         if not self.showing_sequence:
             return
 
         now = pygame.time.get_ticks()
 
-        if (
-            now - self.last_flash
-            > self.flash_interval
-        ):
+        if now - self.last_flash < FLASH_INTERVAL_MS // 2:
+            self.publish_current_led()
+        else:
+            self.publish_led_off_once()
 
+        if now - self.last_flash > FLASH_INTERVAL_MS:
             self.sequence_index += 1
-
             self.last_flash = now
+            self.led_off_sent = False
 
-            if (
-                self.sequence_index
-                >= len(self.sequence)
-            ):
-
+            if self.sequence_index >= len(self.sequence):
                 self.showing_sequence = False
+                self.publish_led_off_once()
+            else:
+                self.publish_current_led()
 
-    # -------------------------
-    # MQTT 버튼 입력
-    # -------------------------
+    def publish_current_led(self):
+        if (
+            not self.mqtt_client
+            or not self.showing_sequence
+            or self.sequence_index >= len(self.sequence)
+            or self.published_sequence_index == self.sequence_index
+        ):
+            return
 
-    def handle_button(
-        self,
-        direction
-    ):
+        direction = self.sequence[self.sequence_index]
 
+        if direction == "LEFT":
+            self.mqtt_client.publish_led_left()
+        else:
+            self.mqtt_client.publish_led_right()
+
+        self.published_sequence_index = self.sequence_index
+        self.led_off_sent = False
+
+    def publish_led_off_once(self):
+        if self.mqtt_client and not self.led_off_sent:
+            self.mqtt_client.publish_led_off()
+            self.led_off_sent = True
+
+    def handle_short_press(self, direction):
+        self.handle_button(direction)
+        return None
+
+    def handle_button(self, direction):
         if self.showing_sequence:
             return
 
-        self.user_inputs.append(
-            direction
-        )
+        self.active_button = direction
+        self.button_press_time = pygame.time.get_ticks()
+        self.user_inputs.append(direction)
 
-        idx = len(
-            self.user_inputs
-        ) - 1
-
-        if (
-
-            self.sequence[idx]
-            != direction
-
-        ):
-
+        idx = len(self.user_inputs) - 1
+        if self.sequence[idx] != direction:
             self.finished = True
+            if self.mqtt_client:
+                self.mqtt_client.publish_led_off()
             return
 
         self.score += 50
 
-        if (
-
-            len(self.user_inputs)
-            == len(self.sequence)
-
-        ):
-
+        if len(self.user_inputs) == len(self.sequence):
             self.round += 1
 
             if self.round > MAX_ROUND:
-
                 self.finished = True
-
+                if self.mqtt_client:
+                    self.mqtt_client.publish_led_off()
             else:
-
                 self.generate_round()
 
-    # -------------------------
-    # 종료 여부
-    # -------------------------
-
     def is_finished(self):
-
         return self.finished
 
-    # -------------------------
-    # 결과 반환
-    # -------------------------
-
     def get_result(self):
-
-        fun_delta = min(
-            30,
-            self.score // 100
-        )
+        fun_delta = min(30, self.score // 100)
 
         return {
-
-            "game_type":
-                "memory",
-
-            "score":
-                self.score,
-
-            "fun_delta":
-                fun_delta
+            "game_type": "memory",
+            "score": self.score,
+            "fun_delta": fun_delta
         }

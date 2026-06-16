@@ -54,21 +54,6 @@ class FeedGameScene:
             - PLAYER_WIDTH // 2
         )
 
-        # 터치 버튼
-        self.left_button_rect = pygame.Rect(
-            20,
-            260,
-            200,
-            50
-        )
-
-        self.right_button_rect = pygame.Rect(
-            260,
-            260,
-            200,
-            50
-        )
-
         self.direction = "CENTER"
 
         self.foods = []
@@ -227,57 +212,20 @@ class FeedGameScene:
                 )
 
     # -----------------
-    # 터치 버튼
+    # 버튼 안내
     # ----------------- 
 
-    def draw_touch_buttons(self):
-
-        pygame.draw.rect(
-            self.screen,
-            (70,120,255),
-            self.left_button_rect,
-            border_radius=12
-        )
-
-        pygame.draw.rect(
-            self.screen,
-            (255,255,255),
-            self.left_button_rect,
-            3,
-            border_radius=12
-        )
-
-        pygame.draw.rect(
-            self.screen,
-            (255,255,255),
-            self.right_button_rect,
-            3,
-            border_radius=12
-        )
-
-        left_text = self.font_md.render(
-            "◀ 왼쪽",
-            True,
-            (255,255,255)
-        )
-
-        right_text = self.font_md.render(
-            "오른쪽 ▶",
+    def draw_button_hint(self):
+        hint_text = self.font_sm.render(
+            "왼쪽/오른쪽 버튼으로 이동",
             True,
             (255,255,255)
         )
 
         self.screen.blit(
-            left_text,
-            left_text.get_rect(
-                center = self.left_button_rect.center
-            )
-        )
-
-        self.screen.blit(
-            right_text,
-            right_text.get_rect(
-                center = self.right_button_rect.center
+            hint_text,
+            hint_text.get_rect(
+                center=(SCREEN_WIDTH // 2, 295)
             )
         )
 
@@ -297,7 +245,7 @@ class FeedGameScene:
 
         self.draw_player()
 
-        self.draw_touch_buttons()
+        self.draw_button_hint()
 
     # -----------------
     # UI
@@ -471,29 +419,15 @@ class FeedGameScene:
         }
 
     # -----------------
-    # 클릭 무시
+    # 물리 버튼 입력
     # -----------------
 
-    def handle_click(
-        self,
-        mx,
-        my
-    ):
-        
-        if self.left_button_rect.collidepoint(
-            mx,
-            my
-        ):
+    def handle_short_press(self, direction):
+        if direction == "LEFT":
             self.move_left()
-
-            return True
-        
-        if self.right_button_rect.collidepoint(
-            mx,
-            my
-        ):
+        elif direction == "RIGHT":
             self.move_right()
+        return None
 
-            return True
-
+    def handle_click(self, mx, my):
         return None

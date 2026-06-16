@@ -9,12 +9,16 @@ PORT = 1883
 TOPICS = {
     "LIGHT": "baekgyeong/sensor/light",
     "GYRO": "baekgyeong/sensor/gyro",
+    "TILT": "baekgyeong/sensor/tilt",
     "BUTTON": "baekgyeong/input/button",
     "LCD_EVENT": "baekgyeong/event/lcd",
+    "STATE_UPDATE": "baekgyeong/state/update",
+    "LED_CONTROL": "baekgyeong/led/control",
     "ACTION_FEED": "baekgyeong/action/feed",
     "ACTION_PLAY": "baekgyeong/action/play",
     "ACTION_PET": "baekgyeong/action/pet",
-    "ACTION_TEXT": "baekgyeong/action/text"
+    "ACTION_TEXT": "baekgyeong/action/text",
+    "COMMAND": "baekgyeong/command",
 }
 
 client = mqtt.Client()

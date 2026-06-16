@@ -11,6 +11,7 @@ COLOR_BORDER = (73, 116, 181)
 COLOR_BUTTON = (73, 116, 181)
 
 COLOR_WHITE = (255, 255, 255)
+COLOR_SELECTED_BORDER = (255, 255, 255)
 
 COLOR_BLACK = (30, 30, 30)
 COLOR_GRAY = (120, 120, 120)
@@ -192,6 +193,14 @@ class PlayResultScene:
             border_radius=10
         )
 
+        pygame.draw.rect(
+            self.screen,
+            COLOR_SELECTED_BORDER,
+            self.ok_button,
+            4,
+            border_radius=10
+        )
+
         text = self.font_md.render(
             "확인",
             True,
@@ -234,3 +243,6 @@ class PlayResultScene:
 
     def update(self):
         pass
+
+    def confirm_selection(self):
+        return "PLAY_RESULT_CLOSE"

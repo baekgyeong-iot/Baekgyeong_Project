@@ -14,6 +14,7 @@ COLOR_GRAY = (100, 100, 100)
 COLOR_BUTTON = (73, 116, 181)
 
 COLOR_WHITE = (255, 255, 255)
+COLOR_SELECTED_BORDER = (255, 255, 255)
 
 
 class FeedResultScene:
@@ -163,6 +164,14 @@ class FeedResultScene:
             border_radius=10
         )
 
+        pygame.draw.rect(
+            self.screen,
+            COLOR_SELECTED_BORDER,
+            self.confirm_rect,
+            4,
+            border_radius=10
+        )
+
         text = self.font_md.render(
             "확인",
             True,
@@ -196,3 +205,6 @@ class FeedResultScene:
             )
 
         return None
+
+    def confirm_selection(self):
+        return "FEED_RESULT_CONFIRMED"

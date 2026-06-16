@@ -30,6 +30,7 @@ COLOR_YELLOW = (255, 255, 0)
 COLOR_BTN_BG = (224, 224, 224)
 COLOR_BTN_ACTIVE_BG = (180, 180, 180)
 COLOR_BTN_BORDER = (176, 176, 176)
+COLOR_SELECTED_BORDER = (255, 255, 255)
 
 COLOR_TEXT_DARK = (17, 17, 17)
 
@@ -82,7 +83,7 @@ class MainScene:
             CHARACTER_SIZE
         )
 
-        self.active_button_idx = None
+        self.active_button_idx = 0
         self.button_pressed_time = 0
 
         self.is_bouncing = False
@@ -279,26 +280,30 @@ class MainScene:
             "밥 주기",
             "잠 자기",
             "놀 기",
-            "대 화"
+            "대 화",
+            "백경이"
         ]
 
         rects = [
             self.feed_button_rect,
             self.sleep_button_rect,
             self.play_button_rect,
-            self.talk_button_rect
+            self.talk_button_rect,
+            self.character_rect
         ]
 
-        now = pygame.time.get_ticks()
-
-        if (
-            now
-            - self.button_pressed_time
-            > 200
-        ):
-            self.active_button_idx = None
-
         for idx, rect in enumerate(rects):
+
+            if idx == 4:
+                if idx == self.active_button_idx:
+                    pygame.draw.rect(
+                        self.screen,
+                        COLOR_SELECTED_BORDER,
+                        rect.inflate(12, 12),
+                        4,
+                        border_radius=18
+                    )
+                continue
 
             color = (
 
@@ -318,9 +323,9 @@ class MainScene:
 
             pygame.draw.rect(
                 self.screen,
-                COLOR_BTN_BORDER,
+                COLOR_SELECTED_BORDER if idx == self.active_button_idx else COLOR_BTN_BORDER,
                 rect,
-                2,
+                4 if idx == self.active_button_idx else 2,
                 border_radius=12
             )
 
@@ -431,11 +436,23 @@ class MainScene:
     # Click
     # -------------------------
 
-    def handle_click(
-        self,
-        mx,
-        my
-    ):
+    def move_selection(self, direction):
+        if direction == "LEFT":
+            self.active_button_idx = (self.active_button_idx - 1) % 5
+        else:
+            self.active_button_idx = (self.active_button_idx + 1) % 5
+
+    def confirm_selection(self):
+        events = [
+            "FEED_BUTTON_CLICKED",
+            "SLEEP_BUTTON_CLICKED",
+            "PLAY_BUTTON_CLICKED",
+            "TEXT_BUTTON_CLICKED",
+            "STROKE_ATTEMPT",
+        ]
+        return events[self.active_button_idx]
+
+    def handle_click(self, mx, my):
 
         if self.feed_button_rect.collidepoint(
             mx,
@@ -445,7 +462,7 @@ class MainScene:
             self.active_button_idx = 0
             self.button_pressed_time = pygame.time.get_ticks()
 
-            return "FEED_BUTTON_CLICKED"
+            return self.confirm_selection()
 
         if self.sleep_button_rect.collidepoint(
             mx,
@@ -455,7 +472,7 @@ class MainScene:
             self.active_button_idx = 1
             self.button_pressed_time = pygame.time.get_ticks()
 
-            return "SLEEP_BUTTON_CLICKED"
+            return self.confirm_selection()
 
         if self.play_button_rect.collidepoint(
             mx,
@@ -465,7 +482,7 @@ class MainScene:
             self.active_button_idx = 2
             self.button_pressed_time = pygame.time.get_ticks()
 
-            return "PLAY_BUTTON_CLICKED"
+            return self.confirm_selection()
 
         if self.talk_button_rect.collidepoint(
             mx,
@@ -475,12 +492,13 @@ class MainScene:
             self.active_button_idx = 3
             self.button_pressed_time = pygame.time.get_ticks()
 
-            return "TEXT_BUTTON_CLICKED"
+            return self.confirm_selection()
 
         if self.character_rect.collidepoint(
             mx,
             my
         ):
-            return "STROKE_ATTEMPT"
+            self.active_button_idx = 4
+            return self.confirm_selection()
 
         return None
