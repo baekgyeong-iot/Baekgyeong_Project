@@ -29,6 +29,7 @@ def connect_mqtt():
     if mqtt_connected:
         return
 
+   #try: #예외 처리 추가가 필요 할 시 수정할 것. 아래도 동일함
     client.connect(BROKER, PORT)
     client.loop_start()
 
@@ -36,6 +37,10 @@ def connect_mqtt():
 
     print("[MQTT] Connected")
 
+   #except Exception as e:    print(f"[MQTT] Connection Failed : {e}") 
+
+    
+  
 
 def publish_event(topic, payload):
 
