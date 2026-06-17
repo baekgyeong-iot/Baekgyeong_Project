@@ -75,6 +75,7 @@ def _initial_state(birth_date: str | None = None) -> dict[str, Any]:
         "mood": MOOD_NORMAL,
         "growth_stage": STAGE_BABY,
         "is_sleeping": False,
+        "sleep_check_requested": False,
         "last_stroke_time": None,
         "last_gift_received_date": None,
         "last_gift_check_date": None,

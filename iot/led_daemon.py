@@ -87,6 +87,11 @@ class LedDaemon:
                 pwm = GPIO.PWM(pin, 1000)
                 pwm.start(pwm_duty(0))
                 self.pwms[pin] = pwm
+        self.turn_all_off()
+
+    def turn_all_off(self) -> None:
+        for name in LED_PINS:
+            self.set_rgb(name, "OFF")
 
     def on_connect(self, client, userdata, flags, reason_code, properties=None):
         print(f"[LED] MQTT connected: {reason_code}")
@@ -102,6 +107,12 @@ class LedDaemon:
 
         payload = data.get("payload", {})
         if isinstance(payload, dict):
+            if (
+                getattr(message, "retain", False)
+                and payload.get("game_led") in {"LEFT", "RIGHT"}
+            ):
+                self.turn_all_off()
+                return
             self.current_payload = payload
             self.apply_payload()
 
@@ -170,8 +181,7 @@ class LedDaemon:
             print("\n[LED] Stopped")
         finally:
             self.client.loop_stop()
-            for name in LED_PINS:
-                self.set_rgb(name, "OFF")
+            self.turn_all_off()
             for pwm in self.pwms.values():
                 pwm.stop()
             GPIO.cleanup()

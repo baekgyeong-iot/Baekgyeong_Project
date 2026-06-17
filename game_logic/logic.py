@@ -97,6 +97,15 @@ def set_game_led(direction: str) -> dict[str, Any]:
     )
 
 
+def request_sleep_check() -> dict[str, Any]:
+    """잠자기 버튼을 누른 뒤에만 조도 센서 입력을 잠 로직으로 받아들인다."""
+    if state.baekgyeong_state["is_runaway"]:
+        return state.add_log("ACTION_IGNORED", {"reason": "is_runaway", "action": "sleep"})
+    state.baekgyeong_state["sleep_check_requested"] = True
+    state.save_game()
+    return state.add_log("SLEEP_CHECK_REQUESTED")
+
+
 def decay_stats(hunger_delta: int = -1, fun_delta: int = -1, energy_delta: int = -1) -> dict[str, Any]:
     """한 번의 시간 흐름에 따른 수치 감소를 적용한다."""
     if state.baekgyeong_state["is_runaway"]:
@@ -294,6 +303,7 @@ def start_sleep() -> dict[str, Any]:
     if state.baekgyeong_state["is_runaway"]:
         return state.add_log("ACTION_IGNORED", {"reason": "is_runaway", "action": "sleep"})
     state.baekgyeong_state["is_sleeping"] = True
+    state.baekgyeong_state["sleep_check_requested"] = True
     refresh_mood()
     return state.add_log("SLEEP_STARTED")
 
@@ -310,6 +320,7 @@ def sleep_tick(energy_delta: int = 1) -> dict[str, Any]:
 def end_sleep(full_energy_delta: int) -> dict[str, Any]:
     """잠을 종료하고 필요하면 energy를 추가 회복한다."""
     state.baekgyeong_state["is_sleeping"] = False
+    state.baekgyeong_state["sleep_check_requested"] = False
     if full_energy_delta > 0:
         state.adjust_stat("energy", full_energy_delta)
         state.increment_count("sleep_count")

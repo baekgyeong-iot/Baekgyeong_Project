@@ -84,6 +84,8 @@ def sleep_tick_loop() -> None:
 
 def start_background_tasks() -> None:
     """서버 시작 시 필요한 자동 작업들을 등록한다."""
+    state.baekgyeong_state["game_led"] = "OFF"
+    state.save_game()
     apply_startup_progress()
     threading.Thread(target=time_tick_loop, daemon=True).start()
     threading.Thread(target=sleep_tick_loop, daemon=True).start()
@@ -101,6 +103,7 @@ def start_mqtt_bridge() -> None:
     try:
         MQTT_BRIDGE = BaekgyeongMqttClient(client_id="baekgyeong-flask-server")
         MQTT_BRIDGE.loop_start()
+        MQTT_BRIDGE.publish_state_update()
         print("[MQTT BRIDGE STARTED]")
     except Exception as exc:
         MQTT_BRIDGE = None

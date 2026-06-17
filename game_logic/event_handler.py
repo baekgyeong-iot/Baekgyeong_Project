@@ -73,6 +73,9 @@ def handle_event(event_message: dict[str, Any]) -> dict[str, Any]:
         return logic.receive_gift(gift_id=int(payload.get("gift_id", 1)))
 
     # 잠은 시작/회복 tick/종료를 분리해서 처리한다.
+    if event_name == "SLEEP_BUTTON_CLICKED":
+        return logic.request_sleep_check()
+
     if event_name == "SLEEP_STARTED":
         return logic.start_sleep()
 
@@ -101,14 +104,24 @@ def handle_event(event_message: dict[str, Any]) -> dict[str, Any]:
             energy_delta=int(payload.get("energy_delta", -1)),
         )
 
-    # 조도 센서는 어두워지면 잠 시작, 자는 중 밝아지면 잠 종료로 해석한다.
+    # 조도 센서는 잠자기 버튼을 누른 뒤에만 잠 로직으로 해석한다.
     if event_name == "LIGHT_CHANGED":
         is_dark = bool(payload.get("is_dark", False))
-        if is_dark and not state.baekgyeong_state["is_sleeping"]:
+        sleep_check_requested = bool(state.baekgyeong_state.get("sleep_check_requested", False))
+        is_sleeping = bool(state.baekgyeong_state["is_sleeping"])
+
+        if not sleep_check_requested and not is_sleeping:
+            return state.get_state()
+
+        if is_dark and not is_sleeping:
             return logic.start_sleep()
-        if not is_dark and state.baekgyeong_state["is_sleeping"]:
+        if not is_dark and is_sleeping:
             return logic.end_sleep(full_energy_delta=int(payload.get("full_energy_delta", 0)))
-        return state.add_log("LIGHT_CHANGED", payload, source=event_message.get("source", "LIGHT_SENSOR"))
+        return state.add_log(
+            "SLEEP_WAITING_DARK",
+            payload,
+            source=event_message.get("source", "LIGHT_SENSOR"),
+        )
 
     # 쓰다듬기는 하루 1회 성공 가능하다.
     if event_name == "STROKE_ATTEMPT":
